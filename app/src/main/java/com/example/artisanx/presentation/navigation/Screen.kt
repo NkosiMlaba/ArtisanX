@@ -14,6 +14,7 @@ sealed class Screen(val route: String) {
     object ArtisanDashboard : Screen("artisan_dashboard")
     object JobBrowse : Screen("job_browse")
     object ArtisanProfile : Screen("artisan_profile")
+    object ArtisanOnboarding : Screen("artisan_onboarding")
     
     // Common
     object JobDetail : Screen("job_detail/{jobId}") {

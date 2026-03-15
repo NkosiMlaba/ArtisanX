@@ -18,6 +18,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.artisanx.presentation.auth.LoginScreen
 import com.example.artisanx.presentation.auth.RegisterScreen
 import com.example.artisanx.presentation.onboarding.RoleSelectionScreen
+import com.example.artisanx.presentation.onboarding.ArtisanOnboardingScreen
 import com.example.artisanx.presentation.customer.*
 import com.example.artisanx.presentation.artisan.*
 import com.example.artisanx.presentation.common.JobDetailScreen
@@ -86,6 +87,9 @@ fun AppNavGraph(
             }
             composable(route = Screen.RoleSelection.route) {
                 RoleSelectionScreen(navController = navController)
+            }
+            composable(route = Screen.ArtisanOnboarding.route) {
+                ArtisanOnboardingScreen(navController = navController, snackbarHostState = snackbarHostState)
             }
 
             // Customer

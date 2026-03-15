@@ -1,5 +1,7 @@
 package com.example.artisanx.di
 
+import com.example.artisanx.data.repository.AuthRepositoryImpl
+import com.example.artisanx.data.repository.JobRepositoryImpl
 import com.example.artisanx.data.repository.ProfileRepositoryImpl
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.JobRepository
