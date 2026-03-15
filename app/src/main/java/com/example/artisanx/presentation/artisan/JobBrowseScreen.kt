@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,7 +18,7 @@ import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.presentation.navigation.Screen
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JobBrowseScreen(
     navController: NavController,
@@ -32,11 +30,6 @@ fun JobBrowseScreen(
     val selectedCategory = viewModel.selectedCategory.value
 
     val categories = listOf("All", "Plumbing", "Electrical", "Cleaning", "Carpentry", "Painting")
-
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = isLoading,
-        onRefresh = { viewModel.loadJobs() }
-    )
 
     Scaffold(
         topBar = {
@@ -61,7 +54,11 @@ fun JobBrowseScreen(
                 }
             }
 
-            Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
+            PullToRefreshBox(
+                isRefreshing = isLoading,
+                onRefresh = { viewModel.loadJobs() },
+                modifier = Modifier.fillMaxSize()
+            ) {
                 if (error != null) {
                     Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
                 } else if (jobs.isEmpty() && !isLoading) {
@@ -79,11 +76,6 @@ fun JobBrowseScreen(
                         }
                     }
                 }
-                PullRefreshIndicator(
-                    refreshing = isLoading,
-                    state = pullRefreshState,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
             }
         }
     }
