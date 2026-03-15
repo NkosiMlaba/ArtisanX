@@ -1,7 +1,7 @@
 package com.example.artisanx.di
 
 import android.content.Context
-import com.example.artisanx.BuildConfig
+
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,8 +21,8 @@ object AppModule {
     @Singleton
     fun provideAppwriteClient(@ApplicationContext context: Context): Client {
         return Client(context)
-            .setEndpoint(BuildConfig.APPWRITE_ENDPOINT)
-            .setProject(BuildConfig.APPWRITE_PROJECT_ID)
+            .setEndpoint(com.example.artisanx.BuildConfig.APPWRITE_ENDPOINT)
+            .setProject(com.example.artisanx.BuildConfig.APPWRITE_PROJECT_ID)
     }
 
     @Provides

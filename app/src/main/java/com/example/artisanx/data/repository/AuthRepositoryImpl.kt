@@ -62,8 +62,8 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun isLoggedIn(): Boolean {
         return try {
-            val session = account.getSession("current")
-            session != null
+            account.getSession("current")
+            true
         } catch (e: Exception) {
             false
         }
