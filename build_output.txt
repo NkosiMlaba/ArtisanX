@@ -1,17 +1,17 @@
-> Task :app:clean
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig
 > Task :app:generateDebugResValues
 > Task :app:checkDebugAarMetadata
 > Task :app:processDebugGoogleServices
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
-> Task :app:mergeDebugResources
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug
+> Task :app:mergeDebugResources
 > Task :app:parseDebugLocalResources
 > Task :app:processDebugMainManifest
 > Task :app:processDebugManifest
@@ -26,34 +26,20 @@
 > Task :app:checkDebugDuplicateClasses
 > Task :app:mergeDebugNativeLibs
 > Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources FAILED
 > Task :app:mergeExtDexDebug
-> Task :app:mergeLibDexDebug
-> Task :app:validateSigningDebug
 
-> Task :app:stripDebugDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so. Run with --info option to learn more.
+FAILURE: Build failed with an exception.
 
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
-> Task :app:processDebugResources
-> Task :app:kaptGenerateStubsDebugKotlin
-w: Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9.
+* What went wrong:
+Execution failed for task ':app:processDebugResources'.
+> java.io.IOException: Couldn't delete C:\Users\nkosi\AndroidStudioProjects\ArtisanX\app\build\intermediates\compile_and_runtime_not_namespaced_r_class_jar\debug\processDebugResources\R.jar
 
-> Task :app:kaptDebugKotlin
-warning: The following options were not recognized by any processor: '[dagger.fastInit, dagger.hilt.android.internal.disableAndroidSuperclassValidation, dagger.hilt.android.internal.projectType, dagger.hilt.internal.useAggregatingRootProcessor, kapt.kotlin.generated]'
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
 
-> Task :app:compileDebugKotlin
-> Task :app:compileDebugJavaWithJavac NO-SOURCE
-> Task :app:hiltAggregateDepsDebug
-> Task :app:hiltJavaCompileDebug NO-SOURCE
-> Task :app:processDebugJavaRes
-> Task :app:mergeDebugJavaResource
-> Task :app:transformDebugClassesWithAsm
-> Task :app:dexBuilderDebug
-> Task :app:mergeProjectDexDebug
-> Task :app:packageDebug
-> Task :app:createDebugApkListingFileRedirect
-> Task :app:assembleDebug
-
-BUILD SUCCESSFUL in 2m 40s
-40 actionable tasks: 40 executed
+BUILD FAILED in 17s
+24 actionable tasks: 24 executed
