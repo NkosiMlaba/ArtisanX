@@ -6,22 +6,45 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.artisanx.data.local.DataStoreManager
 import com.example.artisanx.domain.repository.AuthRepository
+import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.appwrite.models.Document
 import io.appwrite.models.User
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository,
     private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
 
     private val _user = mutableStateOf<User<Map<String, Any>>?>(null)
     val user: State<User<Map<String, Any>>?> = _user
+
+    private val _profileDoc = mutableStateOf<Document<Map<String, Any>>?>(null)
+    val profileDoc: State<Document<Map<String, Any>>?> = _profileDoc
+
+    private val _role = mutableStateOf<String?>(null)
+    val role: State<String?> = _role
+
+    // Edit states
+    private val _isEditing = mutableStateOf(false)
+    val isEditing: State<Boolean> = _isEditing
+
+    // Customer fields
+    val editName = mutableStateOf("")
+
+    // Artisan fields
+    val editPhone = mutableStateOf("")
+    val editTradeCategory = mutableStateOf("")
+    val editSkills = mutableStateOf("")
+    val editServiceArea = mutableStateOf("")
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
@@ -36,10 +59,85 @@ class ProfileViewModel @Inject constructor(
     private fun loadProfile() {
         _isLoading.value = true
         viewModelScope.launch {
-            when (val res = authRepository.getCurrentUser()) {
-                is Resource.Success -> _user.value = res.data
-                is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(res.message ?: "Failed to load profile"))
+            _role.value = dataStoreManager.userRoleFlow.first()
+            
+            when (val userRes = authRepository.getCurrentUser()) {
+                is Resource.Success -> {
+                    _user.value = userRes.data
+                    val userId = userRes.data?.id ?: return@launch
+                    
+                    if (_role.value == "artisan") {
+                        val profileRes = profileRepository.getArtisanProfile(userId)
+                        if (profileRes is Resource.Success && profileRes.data != null) {
+                            _profileDoc.value = profileRes.data
+                        }
+                    } else {
+                        val profileRes = profileRepository.getUserProfile(userId)
+                        if (profileRes is Resource.Success && profileRes.data != null) {
+                            _profileDoc.value = profileRes.data
+                        }
+                    }
+                }
+                is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(userRes.message ?: "Failed to load auth user"))
                 else -> Unit
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun startEditing() {
+        val docData = _profileDoc.value?.data
+        if (docData != null) {
+            editName.value = docData["fullName"] as? String ?: _user.value?.name ?: ""
+            if (_role.value == "artisan") {
+                editPhone.value = docData["phone"] as? String ?: ""
+                editTradeCategory.value = docData["tradeCategory"] as? String ?: ""
+                editSkills.value = docData["skills"] as? String ?: ""
+                editServiceArea.value = docData["serviceArea"] as? String ?: ""
+            }
+            _isEditing.value = true
+        }
+    }
+
+    fun cancelEditing() {
+        _isEditing.value = false
+    }
+
+    fun saveProfile() {
+        val userId = _user.value?.id ?: return
+        
+        _isLoading.value = true
+        viewModelScope.launch {
+            if (_role.value == "artisan") {
+                val updates = mapOf(
+                    "fullName" to editName.value,
+                    "phone" to editPhone.value,
+                    "tradeCategory" to editTradeCategory.value,
+                    "skills" to editSkills.value,
+                    "serviceArea" to editServiceArea.value
+                )
+                when (val res = profileRepository.updateArtisanProfile(userId, updates)) {
+                    is Resource.Success -> {
+                        _profileDoc.value = res.data
+                        _isEditing.value = false
+                        _uiEvent.emit(UiEvent.ShowSnackbar("Profile updated!"))
+                    }
+                    is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(res.message ?: "Failed to update profile"))
+                    else -> Unit
+                }
+            } else {
+                val updates = mapOf(
+                    "fullName" to editName.value
+                )
+                when (val res = profileRepository.updateUserProfile(userId, updates)) {
+                    is Resource.Success -> {
+                        _profileDoc.value = res.data
+                        _isEditing.value = false
+                        _uiEvent.emit(UiEvent.ShowSnackbar("Profile updated!"))
+                    }
+                    is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(res.message ?: "Failed to update profile"))
+                    else -> Unit
+                }
             }
             _isLoading.value = false
         }

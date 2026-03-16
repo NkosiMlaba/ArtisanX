@@ -27,4 +27,6 @@ interface ProfileRepository {
     suspend fun getArtisanProfile(userId: String): Resource<Document<Map<String, Any>>>
     
     suspend fun updateUserProfile(userId: String, updates: Map<String, Any>): Resource<Document<Map<String, Any>>>
+    
+    suspend fun updateArtisanProfile(userId: String, updates: Map<String, Any>): Resource<Document<Map<String, Any>>>
 }
