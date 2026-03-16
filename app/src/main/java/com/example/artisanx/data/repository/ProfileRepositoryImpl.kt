@@ -7,11 +7,21 @@ import io.appwrite.ID
 import io.appwrite.Query
 import io.appwrite.models.Document
 import io.appwrite.services.Databases
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 
 class ProfileRepositoryImpl @Inject constructor(
     private val databases: Databases
 ) : ProfileRepository {
+
+    private fun getCurrentIso8601Date(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US)
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        return sdf.format(Date())
+    }
 
     override suspend fun createUserProfile(
         userId: String,
@@ -29,7 +39,7 @@ class ProfileRepositoryImpl @Inject constructor(
                     "fullName" to fullName,
                     "email" to email,
                     "role" to role,
-                    "createdAt" to System.currentTimeMillis().toString() // Appwrite usually handles datetime strings or timestamps
+                    "createdAt" to getCurrentIso8601Date()
                 )
             )
             Resource.Success(document)
@@ -86,7 +96,7 @@ class ProfileRepositoryImpl @Inject constructor(
                     "badge" to (if (isStudent) "Student Artisan" else "Verified Artisan"),
                     "avgRating" to 0.0,
                     "reviewCount" to 0,
-                    "createdAt" to System.currentTimeMillis().toString()
+                    "createdAt" to getCurrentIso8601Date()
                 )
             )
             Resource.Success(document)
