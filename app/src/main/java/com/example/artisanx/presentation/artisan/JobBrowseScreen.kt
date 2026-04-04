@@ -93,7 +93,7 @@ fun JobItemBrowse(job: Job, onClick: () -> Unit) {
             Text(text = job.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Category: ${job.category}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Budget: $${job.budget}", style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Budget: R${job.budget}", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

@@ -8,19 +8,31 @@ import com.example.artisanx.util.Resource
 import io.appwrite.ID
 import io.appwrite.Query
 import io.appwrite.services.Databases
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 
 class JobRepositoryImpl @Inject constructor(
     private val databases: Databases
 ) : JobRepository {
 
+    private fun getCurrentIso8601Date(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US)
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        return sdf.format(Date())
+    }
+
     override suspend fun createJob(
         customerId: String,
         title: String,
         description: String,
-        location: List<Double>,
         category: String,
-        budget: Double
+        address: String,
+        budget: Double,
+        urgency: String,
+        jobType: String
     ): Resource<Job> {
         return try {
             val document = databases.createDocument(
@@ -28,13 +40,20 @@ class JobRepositoryImpl @Inject constructor(
                 collectionId = Constants.COLLECTION_JOBS,
                 documentId = ID.unique(),
                 data = mapOf(
-                    "customer_id" to customerId,
+                    "customerId" to customerId,
                     "title" to title,
-                    "description" to description,
-                    "location" to location,
                     "category" to category,
+                    "description" to description,
+                    "photoIds" to listOf<String>(),
+                    "latitude" to 0.0,
+                    "longitude" to 0.0,
+                    "address" to address,
                     "budget" to budget,
-                    "status" to "open"
+                    "urgency" to urgency,
+                    "jobType" to jobType,
+                    "status" to "open",
+                    "assignedArtisanId" to "",
+                    "createdAt" to getCurrentIso8601Date()
                 )
             )
             Resource.Success(document.data.toJob(document.id, document.createdAt))
@@ -90,7 +109,7 @@ class JobRepositoryImpl @Inject constructor(
     override suspend fun getJobsByCustomer(customerId: String): Resource<List<Job>> {
         return try {
             val queries = listOf(
-                Query.equal("customer_id", customerId),
+                Query.equal("customerId", customerId),
                 Query.orderDesc("\$createdAt")
             )
             val documentList = databases.listDocuments(

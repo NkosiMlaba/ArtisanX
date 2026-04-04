@@ -68,8 +68,12 @@ fun JobDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = "Category: ${job.category}", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Budget: $${job.budget}", style = MaterialTheme.typography.titleMedium)
+                    Text(text = "Budget: R${job.budget}", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
+                    if (job.address.isNotBlank()) {
+                        Text(text = "Location: ${job.address}", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                     Text(text = "Status: ${job.status}", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = "Description", style = MaterialTheme.typography.titleSmall)

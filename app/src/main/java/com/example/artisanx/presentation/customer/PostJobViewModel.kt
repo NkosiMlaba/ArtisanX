@@ -28,6 +28,9 @@ class PostJobViewModel @Inject constructor(
     private val _category = mutableStateOf("")
     val category: State<String> = _category
 
+    private val _address = mutableStateOf("")
+    val address: State<String> = _address
+
     private val _budget = mutableStateOf("")
     val budget: State<String> = _budget
 
@@ -40,6 +43,7 @@ class PostJobViewModel @Inject constructor(
     fun onTitleChange(value: String) { _title.value = value }
     fun onDescriptionChange(value: String) { _description.value = value }
     fun onCategoryChange(value: String) { _category.value = value }
+    fun onAddressChange(value: String) { _address.value = value }
     fun onBudgetChange(value: String) { _budget.value = value }
 
     fun submitJob() {
@@ -58,8 +62,8 @@ class PostJobViewModel @Inject constructor(
                     customerId = customerId,
                     title = _title.value,
                     description = _description.value,
-                    location = listOf(0.0, 0.0), // Hardcoded pending Maps integration
                     category = _category.value,
+                    address = _address.value.ifBlank { "Not specified" },
                     budget = budgetVal
                 )
 

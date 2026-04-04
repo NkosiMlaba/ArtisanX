@@ -5,40 +5,43 @@ data class Job(
     val customerId: String,
     val title: String,
     val description: String,
-    val location: List<Double>, // [latitude, longitude]
     val category: String,
+    val latitude: Double,
+    val longitude: Double,
+    val address: String,
     val budget: Double,
+    val urgency: String,
+    val jobType: String,
     val status: String,
+    val assignedArtisanId: String,
     val createdAt: String
 )
 
-fun Map<String, Any>.toJob(id: String, createdAt: String): Job {
-    val rawLocation = this["location"] as? List<*> ?: emptyList<Any>()
-    val locationList = rawLocation.mapNotNull {
-        when (it) {
-            is Double -> it
-            is Int -> it.toDouble()
-            is Float -> it.toDouble()
-            else -> 0.0
-        }
+private fun Any?.toDoubleOrDefault(default: Double = 0.0): Double {
+    return when (this) {
+        is Double -> this
+        is Int -> this.toDouble()
+        is Float -> this.toDouble()
+        is Long -> this.toDouble()
+        else -> default
     }
-    
-    val budgetValue = when (val b = this["budget"]) {
-        is Double -> b
-        is Int -> b.toDouble()
-        is Float -> b.toDouble()
-        else -> 0.0
-    }
+}
 
+fun Map<String, Any>.toJob(id: String, createdAt: String): Job {
     return Job(
         id = id,
-        customerId = this["customer_id"] as? String ?: "",
+        customerId = this["customerId"] as? String ?: "",
         title = this["title"] as? String ?: "",
         description = this["description"] as? String ?: "",
-        location = locationList,
         category = this["category"] as? String ?: "",
-        budget = budgetValue,
+        latitude = this["latitude"].toDoubleOrDefault(),
+        longitude = this["longitude"].toDoubleOrDefault(),
+        address = this["address"] as? String ?: "",
+        budget = this["budget"].toDoubleOrDefault(),
+        urgency = this["urgency"] as? String ?: "standard",
+        jobType = this["jobType"] as? String ?: "standard",
         status = this["status"] as? String ?: "open",
+        assignedArtisanId = this["assignedArtisanId"] as? String ?: "",
         createdAt = createdAt
     )
 }

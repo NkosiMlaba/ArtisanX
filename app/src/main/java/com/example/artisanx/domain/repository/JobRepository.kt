@@ -9,9 +9,11 @@ interface JobRepository {
         customerId: String,
         title: String,
         description: String,
-        location: List<Double>,
         category: String,
-        budget: Double
+        address: String,
+        budget: Double,
+        urgency: String = "standard",
+        jobType: String = "standard"
     ): Resource<Job>
 
     suspend fun updateJob(

@@ -27,6 +27,7 @@ fun PostJobScreen(
     val title = viewModel.title.value
     val description = viewModel.description.value
     val category = viewModel.category.value
+    val address = viewModel.address.value
     val budget = viewModel.budget.value
     val isLoading = viewModel.isLoading.value
 
@@ -91,9 +92,17 @@ fun PostJobScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
+                value = address,
+                onValueChange = viewModel::onAddressChange,
+                label = { Text("Location / Address") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
                 value = budget,
                 onValueChange = viewModel::onBudgetChange,
-                label = { Text("Budget ($)") },
+                label = { Text("Budget (ZAR)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )

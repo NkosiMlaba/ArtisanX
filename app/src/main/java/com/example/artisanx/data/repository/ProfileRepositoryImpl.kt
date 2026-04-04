@@ -39,6 +39,9 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                                             "userId" to userId,
                                             "fullName" to fullName,
                                             "email" to email,
+                                            "phone" to "",
+                                            "addresses" to listOf<String>(),
+                                            "profileImageId" to "",
                                             "role" to role,
                                             "createdAt" to getCurrentIso8601Date()
                                     )
@@ -92,19 +95,28 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                                             "fullName" to fullName,
                                             "email" to email,
                                             "phone" to phone,
+                                            "isStudent" to isStudent,
+                                            "institutionName" to "",
+                                            "studentNumber" to "",
+                                            "studentCardFileId" to "",
+                                            "courseField" to "",
+                                            "gradYear" to 0,
+                                            "idFileId" to "",
                                             "tradeCategory" to tradeCategory,
                                             "skills" to skills,
                                             "serviceArea" to serviceArea,
-                                            "isStudent" to isStudent,
+                                            "serviceRadiusKm" to 10.0,
+                                            "latitude" to 0.0,
+                                            "longitude" to 0.0,
+                                            "workPhotoIds" to listOf<String>(),
+                                            "certifications" to "",
+                                            "yearsExperience" to 0,
                                             "verified" to false,
                                             "badge" to
                                                     (if (isStudent) "Student Artisan"
                                                     else "Verified Artisan"),
                                             "avgRating" to 0.0,
                                             "reviewCount" to 0,
-                                            "serviceRadiusKm" to 10.0,
-                                            "latitude" to 0.0,
-                                            "longitude" to 0.0,
                                             "createdAt" to getCurrentIso8601Date()
                                     )
                     )
