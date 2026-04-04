@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.artisanx.domain.repository.AuthRepository
+import com.example.artisanx.domain.repository.CreditsRepository
 import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtisanOnboardingViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val creditsRepository: CreditsRepository
 ) : ViewModel() {
 
     private val _phone = mutableStateOf("")
@@ -70,6 +72,8 @@ class ArtisanOnboardingViewModel @Inject constructor(
 
                 _isLoading.value = false
                 if (profileRes is Resource.Success) {
+                    // Initialize 5 free credits for new artisan
+                    creditsRepository.initializeCredits(user.id, 5)
                     _uiEvent.emit(UiEvent.Navigate("artisan_dashboard"))
                 } else {
                     _uiEvent.emit(UiEvent.ShowSnackbar(profileRes.message ?: "Failed to create artisan profile"))

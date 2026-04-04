@@ -5,13 +5,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.artisanx.data.local.DataStoreManager
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.domain.repository.AuthRepository
+import com.example.artisanx.domain.repository.BiddingRepository
 import com.example.artisanx.domain.repository.JobRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,6 +22,8 @@ import javax.inject.Inject
 class JobDetailViewModel @Inject constructor(
     private val jobRepository: JobRepository,
     private val authRepository: AuthRepository,
+    private val biddingRepository: BiddingRepository,
+    private val dataStoreManager: DataStoreManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -33,6 +38,18 @@ class JobDetailViewModel @Inject constructor(
     private val _error = mutableStateOf<String?>(null)
     val error: State<String?> = _error
 
+    private val _userRole = mutableStateOf<String?>(null)
+    val userRole: State<String?> = _userRole
+
+    private val _isOwnJob = mutableStateOf(false)
+    val isOwnJob: State<Boolean> = _isOwnJob
+
+    private val _hasAlreadyBid = mutableStateOf(false)
+    val hasAlreadyBid: State<Boolean> = _hasAlreadyBid
+
+    private val _bidCount = mutableStateOf(0)
+    val bidCount: State<Int> = _bidCount
+
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
@@ -46,9 +63,13 @@ class JobDetailViewModel @Inject constructor(
             _isLoading.value = false
             return
         }
-        
+
         _isLoading.value = true
         viewModelScope.launch {
+            // Load role
+            _userRole.value = dataStoreManager.userRoleFlow.first()
+
+            // Load job
             when (val result = jobRepository.getJobById(jobId)) {
                 is Resource.Success -> {
                     _job.value = result.data
@@ -59,13 +80,33 @@ class JobDetailViewModel @Inject constructor(
                 }
                 else -> Unit
             }
+
+            // Check ownership and bid status
+            val userRes = authRepository.getCurrentUser()
+            if (userRes is Resource.Success && userRes.data != null) {
+                val userId = userRes.data.id
+                _isOwnJob.value = _job.value?.customerId == userId
+
+                if (_userRole.value == "artisan") {
+                    _hasAlreadyBid.value = biddingRepository.hasArtisanBid(jobId, userId)
+                }
+
+                // Load bid count for job owner
+                if (_isOwnJob.value) {
+                    val bidsRes = biddingRepository.getBidsForJob(jobId)
+                    if (bidsRes is Resource.Success) {
+                        _bidCount.value = bidsRes.data?.size ?: 0
+                    }
+                }
+            }
+
             _isLoading.value = false
         }
     }
 
     fun deleteJob() {
         if (jobId.isBlank()) return
-        
+
         _isLoading.value = true
         viewModelScope.launch {
             when (val result = jobRepository.deleteJob(jobId)) {

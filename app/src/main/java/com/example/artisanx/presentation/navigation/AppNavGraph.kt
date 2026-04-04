@@ -2,8 +2,10 @@ package com.example.artisanx.presentation.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,15 +23,20 @@ import com.example.artisanx.presentation.onboarding.RoleSelectionScreen
 import com.example.artisanx.presentation.onboarding.ArtisanOnboardingScreen
 import com.example.artisanx.presentation.customer.*
 import com.example.artisanx.presentation.artisan.*
+import com.example.artisanx.presentation.bidding.BidSubmitScreen
+import com.example.artisanx.presentation.bidding.BidsListScreen
+import com.example.artisanx.presentation.booking.BookingsScreen
 import com.example.artisanx.presentation.common.JobDetailScreen
 import com.example.artisanx.presentation.profile.*
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object CustomerHome : BottomNavItem(Screen.CustomerDashboard.route, "Home", Icons.Default.Home)
+    object CustomerBookings : BottomNavItem(Screen.CustomerBookings.route, "Bookings", Icons.Default.DateRange)
     object CustomerProfile : BottomNavItem(Screen.CustomerProfile.route, "Profile", Icons.Default.Person)
-    
+
     object ArtisanHome : BottomNavItem(Screen.ArtisanDashboard.route, "Home", Icons.Default.Home)
-    object ArtisanBrowse : BottomNavItem(Screen.JobBrowse.route, "Jobs", Icons.Default.Home)
+    object ArtisanBrowse : BottomNavItem(Screen.JobBrowse.route, "Jobs", Icons.Default.Search)
+    object ArtisanBookings : BottomNavItem(Screen.ArtisanBookings.route, "Bookings", Icons.Default.DateRange)
     object ArtisanProfile : BottomNavItem(Screen.ArtisanProfile.route, "Profile", Icons.Default.Person)
 }
 
@@ -52,9 +59,9 @@ fun AppNavGraph(
             if (showBottomBar) {
                 NavigationBar {
                     val items = if (isCustomerFlow) {
-                        listOf(BottomNavItem.CustomerHome, BottomNavItem.CustomerProfile)
+                        listOf(BottomNavItem.CustomerHome, BottomNavItem.CustomerBookings, BottomNavItem.CustomerProfile)
                     } else {
-                        listOf(BottomNavItem.ArtisanHome, BottomNavItem.ArtisanBrowse, BottomNavItem.ArtisanProfile)
+                        listOf(BottomNavItem.ArtisanHome, BottomNavItem.ArtisanBrowse, BottomNavItem.ArtisanBookings, BottomNavItem.ArtisanProfile)
                     }
                     items.forEach { item ->
                         NavigationBarItem(
@@ -79,6 +86,7 @@ fun AppNavGraph(
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
+            // Auth
             composable(route = Screen.Login.route) {
                 LoginScreen(navController = navController, snackbarHostState = snackbarHostState)
             }
@@ -102,10 +110,13 @@ fun AppNavGraph(
             composable(route = Screen.CustomerProfile.route) {
                 CustomerProfileScreen(navController)
             }
+            composable(route = Screen.CustomerBookings.route) {
+                BookingsScreen(isArtisan = false, snackbarHostState = snackbarHostState)
+            }
 
             // Artisan
             composable(route = Screen.ArtisanDashboard.route) {
-                ArtisanDashboardScreen()
+                ArtisanDashboardScreen(navController = navController)
             }
             composable(route = Screen.JobBrowse.route) {
                 JobBrowseScreen(navController)
@@ -113,10 +124,21 @@ fun AppNavGraph(
             composable(route = Screen.ArtisanProfile.route) {
                 ArtisanProfileScreen(navController)
             }
-            
+            composable(route = Screen.ArtisanBookings.route) {
+                BookingsScreen(isArtisan = true, snackbarHostState = snackbarHostState)
+            }
+
             // Common
             composable(route = Screen.JobDetail.route) {
                 JobDetailScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+
+            // Bidding
+            composable(route = Screen.BidSubmit.route) {
+                BidSubmitScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+            composable(route = Screen.BidsList.route) {
+                BidsListScreen(navController = navController, snackbarHostState = snackbarHostState)
             }
         }
     }

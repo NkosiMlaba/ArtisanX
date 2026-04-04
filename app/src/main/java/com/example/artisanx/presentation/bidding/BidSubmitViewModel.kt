@@ -1,0 +1,149 @@
+package com.example.artisanx.presentation.bidding
+
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.artisanx.domain.model.Job
+import com.example.artisanx.domain.repository.AuthRepository
+import com.example.artisanx.domain.repository.BiddingRepository
+import com.example.artisanx.domain.repository.CreditsRepository
+import com.example.artisanx.domain.repository.JobRepository
+import com.example.artisanx.util.Resource
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class BidSubmitViewModel @Inject constructor(
+    private val biddingRepository: BiddingRepository,
+    private val jobRepository: JobRepository,
+    private val creditsRepository: CreditsRepository,
+    private val authRepository: AuthRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val jobId = savedStateHandle.get<String>("jobId") ?: ""
+
+    private val _job = mutableStateOf<Job?>(null)
+    val job: State<Job?> = _job
+
+    private val _priceOffer = mutableStateOf("")
+    val priceOffer: State<String> = _priceOffer
+
+    private val _message = mutableStateOf("")
+    val message: State<String> = _message
+
+    private val _estimatedHours = mutableStateOf("")
+    val estimatedHours: State<String> = _estimatedHours
+
+    private val _isLoading = mutableStateOf(false)
+    val isLoading: State<Boolean> = _isLoading
+
+    private val _creditBalance = mutableStateOf(0)
+    val creditBalance: State<Int> = _creditBalance
+
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
+    init {
+        loadJobAndCredits()
+    }
+
+    private fun loadJobAndCredits() {
+        viewModelScope.launch {
+            // Load job details
+            when (val result = jobRepository.getJobById(jobId)) {
+                is Resource.Success -> _job.value = result.data
+                is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to load job"))
+                else -> Unit
+            }
+
+            // Load credit balance
+            val userRes = authRepository.getCurrentUser()
+            if (userRes is Resource.Success) {
+                val userId = userRes.data?.id ?: return@launch
+                when (val creditsRes = creditsRepository.getBalance(userId)) {
+                    is Resource.Success -> _creditBalance.value = creditsRes.data ?: 0
+                    else -> Unit
+                }
+            }
+        }
+    }
+
+    fun onPriceOfferChange(value: String) { _priceOffer.value = value }
+    fun onMessageChange(value: String) { _message.value = value }
+    fun onEstimatedHoursChange(value: String) { _estimatedHours.value = value }
+
+    fun submitBid() {
+        val price = _priceOffer.value.toDoubleOrNull()
+        val hours = _estimatedHours.value.toDoubleOrNull()
+
+        if (price == null || price <= 0) {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowSnackbar("Enter a valid price")) }
+            return
+        }
+        if (_message.value.length < 10) {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowSnackbar("Message must be at least 10 characters")) }
+            return
+        }
+        if (hours == null || hours <= 0) {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowSnackbar("Enter valid estimated hours")) }
+            return
+        }
+
+        _isLoading.value = true
+        viewModelScope.launch {
+            val userRes = authRepository.getCurrentUser()
+            if (userRes !is Resource.Success || userRes.data == null) {
+                _isLoading.value = false
+                _uiEvent.emit(UiEvent.ShowSnackbar("Session expired. Please login again."))
+                return@launch
+            }
+            val userId = userRes.data.id
+
+            // Check for duplicate bid
+            if (biddingRepository.hasArtisanBid(jobId, userId)) {
+                _isLoading.value = false
+                _uiEvent.emit(UiEvent.ShowSnackbar("You've already bid on this job"))
+                return@launch
+            }
+
+            // Check credits (bidding costs 2 credits)
+            val bidCost = 2
+            val deductRes = creditsRepository.deductCredits(userId, bidCost)
+            if (deductRes is Resource.Error) {
+                _isLoading.value = false
+                _uiEvent.emit(UiEvent.ShowSnackbar(deductRes.message ?: "Insufficient credits"))
+                return@launch
+            }
+
+            // Submit bid
+            when (val result = biddingRepository.submitBid(
+                jobId = jobId,
+                artisanId = userId,
+                priceOffer = price,
+                message = _message.value,
+                estimatedHours = hours
+            )) {
+                is Resource.Success -> {
+                    _uiEvent.emit(UiEvent.ShowSnackbar("Bid submitted! (2 credits used)"))
+                    _uiEvent.emit(UiEvent.NavigateBack)
+                }
+                is Resource.Error -> {
+                    _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to submit bid"))
+                }
+                else -> Unit
+            }
+            _isLoading.value = false
+        }
+    }
+
+    sealed class UiEvent {
+        data class ShowSnackbar(val message: String) : UiEvent()
+        object NavigateBack : UiEvent()
+    }
+}
