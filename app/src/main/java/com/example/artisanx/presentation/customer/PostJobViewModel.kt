@@ -29,6 +29,15 @@ class PostJobViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    private var cachedUserId = ""
+
+    init {
+        viewModelScope.launch {
+            val res = authRepository.getCurrentUser()
+            if (res is Resource.Success) cachedUserId = res.data?.id ?: ""
+        }
+    }
+
     private val _title = mutableStateOf("")
     val title: State<String> = _title
 
@@ -88,7 +97,11 @@ class PostJobViewModel @Inject constructor(
         _photoUris.add(uri)
         _isPhotoUploading.value = true
         viewModelScope.launch {
-            val fileId = AppwriteFileUtils.uploadFromUri(context, storage, uri, "job_photo")
+            if (cachedUserId.isBlank()) {
+                val res = authRepository.getCurrentUser()
+                if (res is Resource.Success) cachedUserId = res.data?.id ?: ""
+            }
+            val fileId = AppwriteFileUtils.uploadFromUri(context, storage, uri, "job_photo", cachedUserId)
             if (fileId != null) {
                 _uploadedPhotoIds.add(fileId)
             } else {
@@ -143,11 +156,13 @@ class PostJobViewModel @Inject constructor(
 
         _isLoading.value = true
         viewModelScope.launch {
-            val userRes = authRepository.getCurrentUser()
-            if (userRes is Resource.Success) {
-                val customerId = userRes.data?.id ?: ""
-                val result = jobRepository.createJob(
-                    customerId = customerId,
+            if (cachedUserId.isBlank()) {
+                _isLoading.value = false
+                _uiEvent.emit(UiEvent.ShowSnackbar("Could not get user session."))
+                return@launch
+            }
+            val result = jobRepository.createJob(
+                    customerId = cachedUserId,
                     title = _title.value,
                     description = _description.value,
                     category = _category.value,
@@ -167,10 +182,6 @@ class PostJobViewModel @Inject constructor(
                     is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to post job"))
                     else -> Unit
                 }
-            } else {
-                _isLoading.value = false
-                _uiEvent.emit(UiEvent.ShowSnackbar("Could not get user session."))
-            }
         }
     }
 

@@ -147,7 +147,7 @@ class ChatViewModel @Inject constructor(
         if (_currentUserId.value.isBlank()) return
         _isImageUploading.value = true
         viewModelScope.launch {
-            val fileId = AppwriteFileUtils.uploadFromUri(context, storage, uri, "chat_img")
+            val fileId = AppwriteFileUtils.uploadFromUri(context, storage, uri, "chat_img", _currentUserId.value)
             if (fileId != null) {
                 when (val result = chatRepository.sendImageMessage(bookingId, _currentUserId.value, fileId)) {
                     is Resource.Success -> refreshMessages()

@@ -34,6 +34,15 @@ class ArtisanOnboardingViewModel @Inject constructor(
     private val _currentStep = mutableStateOf(OnboardingStep.BASIC)
     val currentStep: State<OnboardingStep> = _currentStep
 
+    private var cachedUserId = ""
+
+    init {
+        viewModelScope.launch {
+            val res = authRepository.getCurrentUser()
+            if (res is Resource.Success) cachedUserId = res.data?.id ?: ""
+        }
+    }
+
     // Step 1 — Basic info
     private val _phone = mutableStateOf("")
     val phone: State<String> = _phone
@@ -165,7 +174,7 @@ class ArtisanOnboardingViewModel @Inject constructor(
     }
 
     private suspend fun uploadFile(uri: Uri, prefix: String): String? =
-        AppwriteFileUtils.uploadFromUri(context, storage, uri, prefix)
+        AppwriteFileUtils.uploadFromUri(context, storage, uri, prefix, cachedUserId)
 
     fun nextStep() {
         when (_currentStep.value) {
