@@ -1,5 +1,6 @@
 package com.example.artisanx
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,7 +24,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+        handleDeepLinkIntent(intent)
+
         setContent {
             ArtisanXTheme {
                 Surface(
@@ -38,11 +40,25 @@ class MainActivity : ComponentActivity() {
                         val navController = rememberNavController()
                         AppNavGraph(
                             navController = navController,
-                            startDestination = viewModel.startDestination.value
+                            startDestination = viewModel.startDestination.value,
+                            pendingBookingId = viewModel.pendingDeepLinkBookingId.value,
+                            onDeepLinkConsumed = viewModel::clearDeepLink
                         )
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDeepLinkIntent(intent)
+    }
+
+    private fun handleDeepLinkIntent(intent: Intent) {
+        val bookingId = intent.getStringExtra(ArtisansXFirebaseService.EXTRA_BOOKING_ID)
+        if (!bookingId.isNullOrBlank()) {
+            viewModel.setDeepLink(bookingId)
         }
     }
 }

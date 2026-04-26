@@ -59,6 +59,9 @@ class BidSubmitViewModel @Inject constructor(
     val aiSuggestion: State<BidSuggestion?> = _aiSuggestion
 
     private val _artisanSkills = mutableStateOf("")
+    private val _existingBidId = mutableStateOf<String?>(null)
+    private val _isEditMode = mutableStateOf(false)
+    val isEditMode: State<Boolean> = _isEditMode
 
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
@@ -86,6 +89,19 @@ class BidSubmitViewModel @Inject constructor(
                 val profileRes = profileRepository.getArtisanProfile(userId)
                 if (profileRes is Resource.Success) {
                     _artisanSkills.value = profileRes.data?.data?.get("skills") as? String ?: ""
+                }
+
+                // Check for existing bid to pre-populate in edit mode
+                val existingBidRes = biddingRepository.getArtisanBidForJob(jobId, userId)
+                if (existingBidRes is Resource.Success && existingBidRes.data != null) {
+                    val existing = existingBidRes.data
+                    if (existing.status == "pending") {
+                        _existingBidId.value = existing.id
+                        _isEditMode.value = true
+                        _priceOffer.value = existing.priceOffer.toInt().toString()
+                        _message.value = existing.message
+                        _estimatedHours.value = existing.estimatedHours.toInt().toString()
+                    }
                 }
             }
         }
@@ -155,38 +171,46 @@ class BidSubmitViewModel @Inject constructor(
             }
             val userId = userRes.data.id
 
-            // Check for duplicate bid
-            if (biddingRepository.hasArtisanBid(jobId, userId)) {
-                _isLoading.value = false
-                _uiEvent.emit(UiEvent.ShowSnackbar("You've already bid on this job"))
-                return@launch
-            }
-
-            // Check credits (bidding costs 2 credits)
-            val bidCost = 2
-            val deductRes = creditsRepository.deductCredits(userId, bidCost)
-            if (deductRes is Resource.Error) {
-                _isLoading.value = false
-                _uiEvent.emit(UiEvent.ShowSnackbar(deductRes.message ?: "Insufficient credits"))
-                return@launch
-            }
-
-            // Submit bid
-            when (val result = biddingRepository.submitBid(
-                jobId = jobId,
-                artisanId = userId,
-                priceOffer = price,
-                message = _message.value,
-                estimatedHours = hours
-            )) {
-                is Resource.Success -> {
-                    _uiEvent.emit(UiEvent.ShowSnackbar("Bid submitted! (2 credits used)"))
-                    _uiEvent.emit(UiEvent.NavigateBack)
+            if (_isEditMode.value) {
+                // Update existing bid — no credits deducted for edits
+                val bidId = _existingBidId.value ?: return@launch
+                when (val result = biddingRepository.updateBid(bidId, price, _message.value, hours)) {
+                    is Resource.Success -> {
+                        _uiEvent.emit(UiEvent.ShowSnackbar("Bid updated successfully"))
+                        _uiEvent.emit(UiEvent.NavigateBack)
+                    }
+                    is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to update bid"))
+                    else -> Unit
                 }
-                is Resource.Error -> {
-                    _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to submit bid"))
+            } else {
+                // New bid — deduct credits and create
+                if (biddingRepository.hasArtisanBid(jobId, userId)) {
+                    _isLoading.value = false
+                    _uiEvent.emit(UiEvent.ShowSnackbar("You've already bid on this job"))
+                    return@launch
                 }
-                else -> Unit
+
+                val deductRes = creditsRepository.deductCredits(userId, 2)
+                if (deductRes is Resource.Error) {
+                    _isLoading.value = false
+                    _uiEvent.emit(UiEvent.ShowSnackbar(deductRes.message ?: "Insufficient credits"))
+                    return@launch
+                }
+
+                when (val result = biddingRepository.submitBid(
+                    jobId = jobId,
+                    artisanId = userId,
+                    priceOffer = price,
+                    message = _message.value,
+                    estimatedHours = hours
+                )) {
+                    is Resource.Success -> {
+                        _uiEvent.emit(UiEvent.ShowSnackbar("Bid submitted! (2 credits used)"))
+                        _uiEvent.emit(UiEvent.NavigateBack)
+                    }
+                    is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to submit bid"))
+                    else -> Unit
+                }
             }
             _isLoading.value = false
         }

@@ -24,6 +24,17 @@ class MainViewModel @Inject constructor(
     private val _startDestination = mutableStateOf(Screen.Login.route)
     val startDestination: State<String> = _startDestination
 
+    private val _pendingDeepLinkBookingId = mutableStateOf<String?>(null)
+    val pendingDeepLinkBookingId: State<String?> = _pendingDeepLinkBookingId
+
+    fun setDeepLink(bookingId: String?) {
+        _pendingDeepLinkBookingId.value = bookingId
+    }
+
+    fun clearDeepLink() {
+        _pendingDeepLinkBookingId.value = null
+    }
+
     init {
         viewModelScope.launch {
             val isLoggedIn = authRepository.isLoggedIn()

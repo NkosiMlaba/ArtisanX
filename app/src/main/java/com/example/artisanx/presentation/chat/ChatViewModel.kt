@@ -121,7 +121,8 @@ class ChatViewModel @Inject constructor(
                             ArtisansXFirebaseService.showLocalNotification(
                                 context,
                                 _otherPartyName.value.ifBlank { "New Message" },
-                                msg.message.take(80)
+                                msg.message.take(80),
+                                bookingId
                             )
                         }
                 }

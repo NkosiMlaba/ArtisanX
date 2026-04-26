@@ -87,7 +87,10 @@ fun ChatScreen(
                         maxLines = 4,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions = KeyboardActions(onSend = { viewModel.sendMessage() }),
-                        shape = RoundedCornerShape(24.dp)
+                        shape = RoundedCornerShape(24.dp),
+                        supportingText = if (messageInput.length > 1800) {
+                            { Text("${messageInput.length}/2000", color = if (messageInput.length >= 2000) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline) }
+                        } else null
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     FilledIconButton(

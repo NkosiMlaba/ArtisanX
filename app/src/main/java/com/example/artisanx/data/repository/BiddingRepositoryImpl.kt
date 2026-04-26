@@ -124,6 +124,50 @@ class BiddingRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getArtisanBidForJob(jobId: String, artisanId: String): Resource<Bid?> {
+        return try {
+            val response = databases.listDocuments(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_BIDS,
+                queries = listOf(
+                    Query.equal("jobId", jobId),
+                    Query.equal("artisanId", artisanId)
+                )
+            )
+            val bid = response.documents.firstOrNull()?.let {
+                it.data.toBid(it.id, it.createdAt)
+            }
+            Resource.Success(bid)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message ?: "Failed to load bid")
+        }
+    }
+
+    override suspend fun updateBid(
+        bidId: String,
+        priceOffer: Double,
+        message: String,
+        estimatedHours: Double
+    ): Resource<Bid> {
+        return try {
+            val document = databases.updateDocument(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_BIDS,
+                documentId = bidId,
+                data = mapOf(
+                    "priceOffer" to priceOffer,
+                    "message" to message,
+                    "estimatedHours" to estimatedHours
+                )
+            )
+            Resource.Success(document.data.toBid(document.id, document.createdAt))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message ?: "Failed to update bid")
+        }
+    }
+
     override suspend fun acceptBid(
         bidId: String,
         jobId: String,

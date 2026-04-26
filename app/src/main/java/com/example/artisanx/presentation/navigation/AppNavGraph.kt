@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -50,10 +51,22 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: andro
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String
+    startDestination: String,
+    pendingBookingId: String? = null,
+    onDeepLinkConsumed: () -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+
+    // Navigate to chat screen when a notification is tapped
+    LaunchedEffect(pendingBookingId) {
+        if (!pendingBookingId.isNullOrBlank()) {
+            navController.navigate(Screen.Chat.createRoute(pendingBookingId)) {
+                launchSingleTop = true
+            }
+            onDeepLinkConsumed()
+        }
+    }
     val currentDestination = navBackStackEntry?.destination
 
     val isCustomerFlow = currentDestination?.route?.startsWith("customer") == true

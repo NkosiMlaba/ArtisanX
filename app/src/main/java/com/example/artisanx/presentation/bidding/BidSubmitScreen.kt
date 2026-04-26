@@ -32,6 +32,7 @@ fun BidSubmitScreen(
     val aiSuggestion = viewModel.aiSuggestion.value
     val isLoading = viewModel.isLoading.value
     val credits = viewModel.creditBalance.value
+    val isEditMode = viewModel.isEditMode.value
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collectLatest { event ->
@@ -45,7 +46,7 @@ fun BidSubmitScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Submit a Bid") },
+                title = { Text(if (isEditMode) "Edit Your Bid" else "Submit a Bid") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -78,23 +79,25 @@ fun BidSubmitScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Credit balance indicator
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-            ) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Credits: $credits",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        text = "Cost: 2 credits",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+            // Credit balance indicator (only relevant for new bids)
+            if (!isEditMode) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Credits: $credits",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "Cost: 2 credits",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
                 }
             }
 
@@ -147,16 +150,16 @@ fun BidSubmitScreen(
             Button(
                 onClick = { viewModel.submitBid() },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = !isLoading && credits >= 2
+                enabled = !isLoading && (isEditMode || credits >= 2)
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Submit Bid")
+                    Text(if (isEditMode) "Update Bid" else "Submit Bid")
                 }
             }
 
-            if (credits < 2) {
+            if (!isEditMode && credits < 2) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "You need at least 2 credits to bid.",

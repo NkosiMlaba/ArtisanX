@@ -5,7 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.artisanx.domain.model.Job
+import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.JobRepository
+import com.example.artisanx.domain.repository.ProfileRepository
+import com.example.artisanx.util.LocationUtils
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -19,8 +22,13 @@ enum class JobSortOption(val label: String) {
 
 @HiltViewModel
 class JobBrowseViewModel @Inject constructor(
-    private val jobRepository: JobRepository
+    private val jobRepository: JobRepository,
+    private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository
 ) : ViewModel() {
+
+    private var artisanLat: Double = 0.0
+    private var artisanLng: Double = 0.0
 
     private val _allJobs = mutableStateOf<List<Job>>(emptyList())
 
@@ -40,7 +48,21 @@ class JobBrowseViewModel @Inject constructor(
     val selectedSort: State<JobSortOption> = _selectedSort
 
     init {
+        loadArtisanLocation()
         loadJobs()
+    }
+
+    private fun loadArtisanLocation() {
+        viewModelScope.launch {
+            val userRes = authRepository.getCurrentUser()
+            if (userRes !is Resource.Success || userRes.data == null) return@launch
+            val profileRes = profileRepository.getArtisanProfile(userRes.data.id)
+            if (profileRes is Resource.Success && profileRes.data != null) {
+                val data = profileRes.data.data
+                artisanLat = (data["latitude"] as? Number)?.toDouble() ?: 0.0
+                artisanLng = (data["longitude"] as? Number)?.toDouble() ?: 0.0
+            }
+        }
     }
 
     fun loadJobs() {
@@ -64,6 +86,12 @@ class JobBrowseViewModel @Inject constructor(
     fun setCategoryFilter(category: String?) {
         _selectedCategory.value = category
         loadJobs()
+    }
+
+    fun distanceKmFor(job: Job): Double? {
+        if (artisanLat == 0.0 && artisanLng == 0.0) return null
+        if (job.latitude == 0.0 && job.longitude == 0.0) return null
+        return LocationUtils.haversineKm(artisanLat, artisanLng, job.latitude, job.longitude)
     }
 
     fun setSortOption(option: JobSortOption) {

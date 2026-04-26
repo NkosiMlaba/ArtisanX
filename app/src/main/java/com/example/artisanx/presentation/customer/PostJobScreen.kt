@@ -101,7 +101,7 @@ fun PostJobScreen(
                 label = { Text("Job Description") },
                 modifier = Modifier.fillMaxWidth().height(140.dp),
                 maxLines = 5,
-                supportingText = { Text("Describe what you need done") }
+                supportingText = { Text("${description.length}/2000 — describe what needs doing") }
             )
 
             // AI description button

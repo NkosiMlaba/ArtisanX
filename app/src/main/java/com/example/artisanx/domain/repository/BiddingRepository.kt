@@ -21,4 +21,13 @@ interface BiddingRepository {
     suspend fun updateBidStatus(bidId: String, status: String): Resource<Bid>
 
     suspend fun acceptBid(bidId: String, jobId: String, artisanId: String, customerId: String): Resource<Unit>
+
+    suspend fun getArtisanBidForJob(jobId: String, artisanId: String): Resource<Bid?>
+
+    suspend fun updateBid(
+        bidId: String,
+        priceOffer: Double,
+        message: String,
+        estimatedHours: Double
+    ): Resource<Bid>
 }

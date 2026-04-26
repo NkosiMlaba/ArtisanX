@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.presentation.navigation.Screen
+import com.example.artisanx.util.LocationUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,9 +107,11 @@ fun JobBrowseScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(jobs) { job ->
-                            JobItemBrowse(job = job, onClick = {
-                                navController.navigate(Screen.JobDetail.createRoute(job.id))
-                            })
+                            JobItemBrowse(
+                                job = job,
+                                distanceKm = viewModel.distanceKmFor(job),
+                                onClick = { navController.navigate(Screen.JobDetail.createRoute(job.id)) }
+                            )
                         }
                     }
                 }
@@ -118,7 +121,7 @@ fun JobBrowseScreen(
 }
 
 @Composable
-fun JobItemBrowse(job: Job, onClick: () -> Unit) {
+fun JobItemBrowse(job: Job, distanceKm: Double? = null, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -161,7 +164,10 @@ fun JobItemBrowse(job: Job, onClick: () -> Unit) {
             }
             if (job.address.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = null,
@@ -174,8 +180,17 @@ fun JobItemBrowse(job: Job, onClick: () -> Unit) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
+                    if (distanceKm != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = LocationUtils.formatDistanceKm(distanceKm),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }

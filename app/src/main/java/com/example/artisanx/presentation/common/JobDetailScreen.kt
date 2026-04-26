@@ -1,11 +1,14 @@
 package com.example.artisanx.presentation.common
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.CameraPosition
@@ -47,6 +51,7 @@ fun JobDetailScreen(
     val isMatchLoading = viewModel.isMatchLoading.value
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collectLatest { event ->
@@ -147,6 +152,26 @@ fun JobDetailScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
+
+                        // Navigate button — opens Google Maps directions to job site
+                        OutlinedButton(
+                            onClick = {
+                                val uri = Uri.parse(
+                                    "geo:${job.latitude},${job.longitude}?q=${job.latitude},${job.longitude}(${Uri.encode(job.title)})"
+                                )
+                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.Default.Navigation,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Navigate to Job Site")
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
                     Text(text = "Job Type: ${job.jobType.replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.bodyMedium)
@@ -174,11 +199,10 @@ fun JobDetailScreen(
                             }
                             job.status == "open" && hasAlreadyBid -> {
                                 OutlinedButton(
-                                    onClick = {},
-                                    modifier = Modifier.fillMaxWidth(),
-                                    enabled = false
+                                    onClick = { navController.navigate(Screen.BidSubmit.createRoute(job.id)) },
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Bid Submitted — Awaiting Response")
+                                    Text("Edit Your Bid")
                                 }
                             }
                             hasAlreadyBid && job.status in listOf("assigned", "in_progress") -> {
