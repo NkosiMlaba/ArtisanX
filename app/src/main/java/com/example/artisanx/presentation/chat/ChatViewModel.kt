@@ -1,10 +1,12 @@
 package com.example.artisanx.presentation.chat
 
+import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.artisanx.ArtisansXFirebaseService
 import com.example.artisanx.domain.model.ChatMessage
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BookingRepository
@@ -12,6 +14,7 @@ import com.example.artisanx.domain.repository.ChatRepository
 import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,6 +29,7 @@ class ChatViewModel @Inject constructor(
     private val bookingRepository: BookingRepository,
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -105,7 +109,24 @@ class ChatViewModel @Inject constructor(
     private suspend fun refreshMessages() {
         if (bookingId.isBlank()) return
         when (val result = chatRepository.getMessages(bookingId)) {
-            is Resource.Success -> _messages.value = result.data ?: emptyList()
+            is Resource.Success -> {
+                val newMessages = result.data ?: emptyList()
+                val previousIds = _messages.value.map { it.id }.toSet()
+                val currentId = _currentUserId.value
+                // Notify about new messages from the other party (not our own sends)
+                if (currentId.isNotBlank() && previousIds.isNotEmpty()) {
+                    newMessages
+                        .filter { it.id !in previousIds && it.senderId != currentId }
+                        .forEach { msg ->
+                            ArtisansXFirebaseService.showLocalNotification(
+                                context,
+                                _otherPartyName.value.ifBlank { "New Message" },
+                                msg.message.take(80)
+                            )
+                        }
+                }
+                _messages.value = newMessages
+            }
             else -> Unit
         }
     }

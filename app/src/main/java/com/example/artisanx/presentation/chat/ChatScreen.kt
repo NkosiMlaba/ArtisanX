@@ -24,6 +24,10 @@ import androidx.navigation.NavController
 import com.example.artisanx.domain.model.ChatMessage
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,10 +160,31 @@ fun MessageBubble(message: ChatMessage, isOwn: Boolean) {
             Text(text = message.message, color = textColor, style = MaterialTheme.typography.bodyMedium)
         }
         Text(
-            text = message.createdAt.take(16).replace("T", " "),
+            text = formatChatTimestamp(message.createdAt),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
         )
+    }
+}
+
+private fun formatChatTimestamp(isoTimestamp: String): String {
+    return try {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US)
+        val date = sdf.parse(isoTimestamp) ?: return isoTimestamp
+        val saZone = TimeZone.getTimeZone("Africa/Johannesburg")
+        val now = Calendar.getInstance(saZone)
+        val msgCal = Calendar.getInstance(saZone).apply { time = date }
+
+        val isSameDay = now.get(Calendar.YEAR) == msgCal.get(Calendar.YEAR) &&
+                now.get(Calendar.DAY_OF_YEAR) == msgCal.get(Calendar.DAY_OF_YEAR)
+
+        if (isSameDay) {
+            SimpleDateFormat("HH:mm", Locale.US).apply { timeZone = saZone }.format(date)
+        } else {
+            SimpleDateFormat("MMM d, HH:mm", Locale.US).apply { timeZone = saZone }.format(date)
+        }
+    } catch (e: Exception) {
+        isoTimestamp.take(16).replace("T", " ")
     }
 }

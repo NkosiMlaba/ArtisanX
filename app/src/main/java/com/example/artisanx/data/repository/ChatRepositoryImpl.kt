@@ -1,13 +1,10 @@
 package com.example.artisanx.data.repository
 
-import android.content.Context
-import com.example.artisanx.ArtisansXFirebaseService
 import com.example.artisanx.domain.model.ChatMessage
 import com.example.artisanx.domain.model.toChatMessage
 import com.example.artisanx.domain.repository.ChatRepository
 import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
-import dagger.hilt.android.qualifiers.ApplicationContext
 import io.appwrite.ID
 import io.appwrite.Permission
 import io.appwrite.Query
@@ -20,8 +17,7 @@ import java.util.TimeZone
 import javax.inject.Inject
 
 class ChatRepositoryImpl @Inject constructor(
-    private val databases: Databases,
-    @ApplicationContext private val context: Context
+    private val databases: Databases
 ) : ChatRepository {
 
     private fun getCurrentIso8601Date(): String {
@@ -53,7 +49,6 @@ class ChatRepositoryImpl @Inject constructor(
                 )
             )
             val msg = document.data.toChatMessage(document.id, document.createdAt)
-            ArtisansXFirebaseService.showLocalNotification(context, "New Message", message.take(60))
             Resource.Success(msg)
         } catch (e: Exception) {
             e.printStackTrace()

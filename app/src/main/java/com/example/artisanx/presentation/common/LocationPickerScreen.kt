@@ -1,6 +1,8 @@
 package com.example.artisanx.presentation.common
 
 import android.Manifest
+import android.location.Geocoder
+import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,12 +20,18 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 data class LocationResult(
     val latitude: Double,
     val longitude: Double,
     val address: String
 )
+
+private fun formatCoords(lat: Double, lng: Double): String =
+    String.format(Locale.US, "%.5f, %.5f", lat, lng)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -32,16 +40,30 @@ fun LocationPickerScreen(
     onLocationSelected: (LocationResult) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val scope = rememberCoroutineScope()
 
-    // Start at Durban, SA
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(initialLocation, 12f)
+        position = CameraPosition.fromLatLngZoom(initialLocation, 14f)
     }
 
-    // The marker is always at the center of the camera viewport
     val markerPosition by remember {
         derivedStateOf { cameraPositionState.position.target }
+    }
+
+    // Reverse-geocode the center position after the camera settles
+    var displayAddress by remember { mutableStateOf(formatCoords(initialLocation.latitude, initialLocation.longitude)) }
+    var isGeocoding by remember { mutableStateOf(false) }
+
+    // Debounce: wait 600ms after camera stops moving, then geocode
+    LaunchedEffect(markerPosition) {
+        isGeocoding = true
+        delay(600)
+        val lat = markerPosition.latitude
+        val lng = markerPosition.longitude
+        displayAddress = reverseGeocode(context, lat, lng) ?: formatCoords(lat, lng)
+        isGeocoding = false
     }
 
     LaunchedEffect(Unit) {
@@ -67,10 +89,11 @@ fun LocationPickerScreen(
                                 LocationResult(
                                     latitude = pos.latitude,
                                     longitude = pos.longitude,
-                                    address = "%.4f, %.4f".format(pos.latitude, pos.longitude)
+                                    address = displayAddress
                                 )
                             )
-                        }
+                        },
+                        enabled = !isGeocoding
                     ) {
                         Text("Confirm", fontWeight = FontWeight.Bold)
                     }
@@ -99,10 +122,10 @@ fun LocationPickerScreen(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(48.dp)
-                    .offset(y = (-24).dp) // offset so pin tip is at center
+                    .offset(y = (-24).dp)
             )
 
-            // Coordinate display at bottom
+            // Address display at bottom
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -119,13 +142,46 @@ fun LocationPickerScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "%.5f, %.5f".format(markerPosition.latitude, markerPosition.longitude),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (isGeocoding) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    } else {
+                        Text(
+                            text = displayAddress,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+private suspend fun reverseGeocode(context: android.content.Context, lat: Double, lng: Double): String? {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+                geocoder.getFromLocation(lat, lng, 1) { addresses ->
+                    val addr = addresses.firstOrNull()
+                    if (cont.isActive) cont.resume(addr?.let { buildAddressString(it) }, onCancellation = null)
+                }
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val addresses = geocoder.getFromLocation(lat, lng, 1)
+            addresses?.firstOrNull()?.let { buildAddressString(it) }
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun buildAddressString(address: android.location.Address): String {
+    val parts = mutableListOf<String>()
+    address.thoroughfare?.let { parts.add(it) }
+    address.subLocality?.let { parts.add(it) }
+    address.locality?.let { parts.add(it) }
+    address.adminArea?.let { parts.add(it) }
+    return if (parts.isNotEmpty()) parts.joinToString(", ") else address.getAddressLine(0) ?: ""
 }
