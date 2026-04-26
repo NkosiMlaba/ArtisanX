@@ -1,5 +1,6 @@
 package com.example.artisanx.presentation.customer
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -47,6 +48,27 @@ fun PostJobScreen(
     val isPhotoUploading = viewModel.isPhotoUploading.value
 
     var showMapPicker by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val isDirty = title.isNotBlank() || description.isNotBlank() || budget.isNotBlank()
+
+    BackHandler(enabled = isDirty) { showDiscardDialog = true }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard job?") },
+            text = { Text("You have unsaved changes. Leave without posting?") },
+            confirmButton = {
+                TextButton(onClick = { showDiscardDialog = false; navController.popBackStack() }) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) { Text("Keep editing") }
+            }
+        )
+    }
 
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -77,7 +99,7 @@ fun PostJobScreen(
             TopAppBar(
                 title = { Text("Post a Job") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { if (isDirty) showDiscardDialog = true else navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }

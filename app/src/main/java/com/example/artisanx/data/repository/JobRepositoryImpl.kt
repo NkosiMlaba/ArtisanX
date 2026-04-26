@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.domain.model.toJob
@@ -13,6 +13,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class JobRepositoryImpl @Inject constructor(
     private val databases: Databases
@@ -61,6 +62,7 @@ class JobRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toJob(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to create job")
         }
@@ -76,6 +78,7 @@ class JobRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toJob(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update job")
         }
@@ -90,6 +93,7 @@ class JobRepositoryImpl @Inject constructor(
             )
             Resource.Success(Unit)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to delete job")
         }
@@ -104,6 +108,7 @@ class JobRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toJob(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to get job")
         }
@@ -123,6 +128,7 @@ class JobRepositoryImpl @Inject constructor(
             val jobs = documentList.documents.map { it.data.toJob(it.id, it.createdAt) }
             Resource.Success(jobs)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to list customer jobs")
         }
@@ -146,6 +152,7 @@ class JobRepositoryImpl @Inject constructor(
             val jobs = documentList.documents.map { it.data.toJob(it.id, it.createdAt) }
             Resource.Success(jobs)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to list open jobs")
         }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Handyman
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
@@ -22,6 +23,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.presentation.navigation.Screen
+import com.example.artisanx.presentation.common.EmptyState
+import com.example.artisanx.presentation.common.JobCardSkeleton
 import com.example.artisanx.util.LocationUtils
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -161,22 +164,40 @@ fun JobBrowseScreen(
                     onRefresh = { viewModel.loadJobs() },
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    if (error != null) {
-                        Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
-                    } else if (jobs.isEmpty() && !isLoading) {
-                        Text(text = "No open jobs found in this category.", modifier = Modifier.align(Alignment.Center))
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            items(jobs) { job ->
-                                JobItemBrowse(
-                                    job = job,
-                                    distanceKm = viewModel.distanceKmFor(job),
-                                    onClick = { navController.navigate(Screen.JobDetail.createRoute(job.id)) }
-                                )
+                    when {
+                        isLoading && jobs.isEmpty() -> {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(5) { JobCardSkeleton() }
+                            }
+                        }
+                        error != null -> {
+                            Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(16.dp))
+                        }
+                        jobs.isEmpty() -> {
+                            EmptyState(
+                                icon = Icons.Default.Handyman,
+                                title = "No open jobs in this category",
+                                subtitle = "Check back later or try a different category.",
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(jobs) { job ->
+                                    JobItemBrowse(
+                                        job = job,
+                                        distanceKm = viewModel.distanceKmFor(job),
+                                        onClick = { navController.navigate(Screen.JobDetail.createRoute(job.id)) }
+                                    )
+                                }
                             }
                         }
                     }

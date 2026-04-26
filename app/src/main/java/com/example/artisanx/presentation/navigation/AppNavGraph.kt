@@ -21,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.artisanx.presentation.auth.LoginScreen
 import com.example.artisanx.presentation.auth.RegisterScreen
+import com.example.artisanx.presentation.auth.PrivacyPolicyScreen
 import com.example.artisanx.presentation.onboarding.RoleSelectionScreen
 import com.example.artisanx.presentation.onboarding.ArtisanOnboardingScreen
 import com.example.artisanx.presentation.customer.*
@@ -194,6 +195,11 @@ fun AppNavGraph(
             // Buy Credits
             composable(route = Screen.BuyCredits.route) {
                 BuyCreditsScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+
+            // Legal
+            composable(route = Screen.PrivacyPolicy.route) {
+                PrivacyPolicyScreen(navController = navController)
             }
         }
     }

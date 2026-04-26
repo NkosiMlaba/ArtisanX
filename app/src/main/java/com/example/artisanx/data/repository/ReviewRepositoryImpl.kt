@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import com.example.artisanx.domain.model.Review
 import com.example.artisanx.domain.model.toReview
@@ -16,6 +16,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class ReviewRepositoryImpl @Inject constructor(
     private val databases: Databases,
@@ -59,7 +60,7 @@ class ReviewRepositoryImpl @Inject constructor(
 
             Resource.Success(document.data.toReview(document.id, document.createdAt))
         } catch (e: Exception) {
-            e.printStackTrace()
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             Resource.Error(e.message ?: "Failed to submit review")
         }
     }
@@ -89,7 +90,7 @@ class ReviewRepositoryImpl @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
         }
     }
 
@@ -105,7 +106,7 @@ class ReviewRepositoryImpl @Inject constructor(
             }
             Resource.Success(review)
         } catch (e: Exception) {
-            e.printStackTrace()
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             Resource.Error(e.message ?: "Failed to load review")
         }
     }
@@ -123,7 +124,7 @@ class ReviewRepositoryImpl @Inject constructor(
             val reviews = response.documents.map { it.data.toReview(it.id, it.createdAt) }
             Resource.Success(reviews)
         } catch (e: Exception) {
-            e.printStackTrace()
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             Resource.Error(e.message ?: "Failed to load reviews")
         }
     }

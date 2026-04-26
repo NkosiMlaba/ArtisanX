@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import com.example.artisanx.domain.model.ChatMessage
 import com.example.artisanx.domain.model.toChatMessage
@@ -15,6 +15,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class ChatRepositoryImpl @Inject constructor(
     private val databases: Databases
@@ -51,6 +52,7 @@ class ChatRepositoryImpl @Inject constructor(
             val msg = document.data.toChatMessage(document.id, document.createdAt)
             Resource.Success(msg)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to send message")
         }
@@ -81,6 +83,7 @@ class ChatRepositoryImpl @Inject constructor(
             val msg = document.data.toChatMessage(document.id, document.createdAt)
             Resource.Success(msg)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to send image")
         }
@@ -100,6 +103,7 @@ class ChatRepositoryImpl @Inject constructor(
             val messages = response.documents.map { it.data.toChatMessage(it.id, it.createdAt) }
             Resource.Success(messages)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to load messages")
         }

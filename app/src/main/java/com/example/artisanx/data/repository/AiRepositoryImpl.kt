@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import com.example.artisanx.BuildConfig
 import com.example.artisanx.data.remote.AiMessage
@@ -13,6 +13,7 @@ import com.example.artisanx.util.Resource
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class AiRepositoryImpl @Inject constructor(
     private val groqService: GroqApiService,
@@ -48,6 +49,7 @@ Keep it in simple English accessible to South African users. Do not include pric
                 ?: return Resource.Error("No response from AI")
             Resource.Success(text)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error("AI assistant unavailable right now. You can describe the job manually.")
         }
@@ -106,6 +108,7 @@ Suggest a fair price range and message template:"""
                 )
             )
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error("AI assistant unavailable. Fill in your bid manually.")
         }
@@ -178,6 +181,7 @@ Return the ranked JSON array:"""
             }
             Resource.Success(matches)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error("AI matching unavailable. Artisans sorted by rating.")
         }

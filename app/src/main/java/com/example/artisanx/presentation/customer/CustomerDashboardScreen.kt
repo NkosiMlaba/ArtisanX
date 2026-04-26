@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.WorkOutline
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -16,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Job
+import com.example.artisanx.presentation.common.EmptyState
+import com.example.artisanx.presentation.common.JobCardSkeleton
 import com.example.artisanx.presentation.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,28 +46,42 @@ fun CustomerDashboardScreen(
             onRefresh = { viewModel.loadMyJobs() },
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
-            if (error != null && !isLoading) {
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                )
-            } else if (jobs.isEmpty() && !isLoading) {
-                Text(
-                    text = "You haven't posted any jobs yet.\nTap + to post your first job.",
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(jobs) { job ->
-                        JobItem(job = job, onClick = {
-                            navController.navigate(Screen.JobDetail.createRoute(job.id))
-                        })
+            when {
+                isLoading && jobs.isEmpty() -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(4) { JobCardSkeleton() }
+                    }
+                }
+                error != null && !isLoading -> {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                    )
+                }
+                jobs.isEmpty() -> {
+                    EmptyState(
+                        icon = Icons.Default.WorkOutline,
+                        title = "No jobs posted yet",
+                        subtitle = "Tap + to post your first job and get bids from skilled artisans.",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(jobs) { job ->
+                            JobItem(job = job, onClick = {
+                                navController.navigate(Screen.JobDetail.createRoute(job.id))
+                            })
+                        }
                     }
                 }
             }

@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import android.content.Context
 import com.example.artisanx.ArtisansXFirebaseService
@@ -16,6 +16,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class BookingRepositoryImpl @Inject constructor(
     private val databases: Databases,
@@ -49,6 +50,7 @@ class BookingRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toBooking(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to create booking")
         }
@@ -67,6 +69,7 @@ class BookingRepositoryImpl @Inject constructor(
             val bookings = response.documents.map { it.data.toBooking(it.id, it.createdAt) }
             Resource.Success(bookings)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to load bookings")
         }
@@ -85,6 +88,7 @@ class BookingRepositoryImpl @Inject constructor(
             val bookings = response.documents.map { it.data.toBooking(it.id, it.createdAt) }
             Resource.Success(bookings)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to load bookings")
         }
@@ -99,6 +103,7 @@ class BookingRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toBooking(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to load booking")
         }
@@ -149,12 +154,14 @@ class BookingRepositoryImpl @Inject constructor(
                         data = jobData
                     )
                 } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
                     e.printStackTrace()
                 }
             }
 
             Resource.Success(booking)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update booking status")
         }
@@ -170,6 +177,7 @@ class BookingRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toBooking(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to mark as paid")
         }

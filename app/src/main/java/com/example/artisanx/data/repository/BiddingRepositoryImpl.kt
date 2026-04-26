@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import android.content.Context
 import com.example.artisanx.ArtisansXFirebaseService
@@ -16,6 +16,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class BiddingRepositoryImpl @Inject constructor(
     private val databases: Databases,
@@ -52,6 +53,7 @@ class BiddingRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toBid(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to submit bid")
         }
@@ -70,6 +72,7 @@ class BiddingRepositoryImpl @Inject constructor(
             val bids = response.documents.map { it.data.toBid(it.id, it.createdAt) }
             Resource.Success(bids)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to load bids")
         }
@@ -88,6 +91,7 @@ class BiddingRepositoryImpl @Inject constructor(
             val bids = response.documents.map { it.data.toBid(it.id, it.createdAt) }
             Resource.Success(bids)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to load bids")
         }
@@ -105,6 +109,7 @@ class BiddingRepositoryImpl @Inject constructor(
             )
             response.documents.isNotEmpty()
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             false
         }
     }
@@ -119,6 +124,7 @@ class BiddingRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toBid(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update bid")
         }
@@ -139,6 +145,7 @@ class BiddingRepositoryImpl @Inject constructor(
             }
             Resource.Success(bid)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to load bid")
         }
@@ -163,6 +170,7 @@ class BiddingRepositoryImpl @Inject constructor(
             )
             Resource.Success(document.data.toBid(document.id, document.createdAt))
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update bid")
         }
@@ -238,6 +246,7 @@ class BiddingRepositoryImpl @Inject constructor(
 
             Resource.Success(Unit)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to accept bid")
         }

@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import com.example.artisanx.domain.repository.ArtisanSummary
 import com.example.artisanx.domain.repository.ProfileRepository
@@ -15,6 +15,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class ProfileRepositoryImpl @Inject constructor(private val databases: Databases) :
         ProfileRepository {
@@ -56,6 +57,7 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                     )
             Resource.Success(document)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to create user profile")
         }
@@ -76,6 +78,7 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                 Resource.Error("Profile not found")
             }
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to get user profile")
         }
@@ -144,6 +147,7 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                     )
             Resource.Success(document)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to create artisan profile")
         }
@@ -164,6 +168,7 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                 Resource.Error("Artisan profile not found")
             }
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to get artisan profile")
         }
@@ -190,6 +195,7 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                 Resource.Error("User profile not found")
             }
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update profile")
         }
@@ -216,6 +222,7 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                 Resource.Error("Artisan profile not found")
             }
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update artisan profile")
         }
@@ -250,6 +257,7 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
             }
             Resource.Success(summaries)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to fetch artisans")
         }

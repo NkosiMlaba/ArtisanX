@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import com.example.artisanx.domain.repository.CreditsRepository
 import com.example.artisanx.util.Constants
@@ -13,6 +13,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class CreditsRepositoryImpl @Inject constructor(
     private val databases: Databases
@@ -50,6 +51,7 @@ class CreditsRepositoryImpl @Inject constructor(
                 Resource.Success(5)
             }
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to get credit balance")
         }
@@ -76,6 +78,7 @@ class CreditsRepositoryImpl @Inject constructor(
             }
             Resource.Success(Unit)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to initialize credits")
         }
@@ -97,6 +100,7 @@ class CreditsRepositoryImpl @Inject constructor(
             )
             Resource.Success(newBalance)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to add credits")
         }
@@ -130,6 +134,7 @@ class CreditsRepositoryImpl @Inject constructor(
             )
             Resource.Success(newBalance)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to deduct credits")
         }

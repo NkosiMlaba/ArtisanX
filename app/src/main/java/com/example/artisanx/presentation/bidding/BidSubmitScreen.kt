@@ -1,5 +1,6 @@
 package com.example.artisanx.presentation.bidding
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,6 +10,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -33,6 +38,26 @@ fun BidSubmitScreen(
     val isLoading = viewModel.isLoading.value
     val credits = viewModel.creditBalance.value
     val isEditMode = viewModel.isEditMode.value
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val isDirty = priceOffer.isNotBlank() || message.isNotBlank()
+    BackHandler(enabled = isDirty) { showDiscardDialog = true }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard bid?") },
+            text = { Text("You have unsaved changes. Leave without submitting?") },
+            confirmButton = {
+                TextButton(onClick = { showDiscardDialog = false; navController.popBackStack() }) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) { Text("Keep editing") }
+            }
+        )
+    }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collectLatest { event ->
@@ -48,7 +73,7 @@ fun BidSubmitScreen(
             TopAppBar(
                 title = { Text(if (isEditMode) "Edit Your Bid" else "Submit a Bid") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { if (isDirty) showDiscardDialog = true else navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }

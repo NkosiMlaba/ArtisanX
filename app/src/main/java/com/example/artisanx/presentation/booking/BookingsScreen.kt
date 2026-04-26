@@ -3,6 +3,8 @@ package com.example.artisanx.presentation.booking
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -17,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.artisanx.presentation.common.BookingCardSkeleton
+import com.example.artisanx.presentation.common.EmptyState
 import com.example.artisanx.presentation.navigation.Screen
 import kotlinx.coroutines.flow.collectLatest
 
@@ -49,33 +53,47 @@ fun BookingsScreen(
             onRefresh = { viewModel.loadBookings() },
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
-            if (error != null) {
-                Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
-            } else if (bookings.isEmpty() && !isLoading) {
-                Text(text = "No bookings yet.", modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(bookings) { bookingWithJob ->
-                        BookingCard(
-                            bookingWithJob = bookingWithJob,
-                            isArtisan = isArtisan,
-                            onUpdateStatus = { newStatus -> viewModel.updateStatus(bookingWithJob.booking.id, newStatus) },
-                            onMarkPaid = { viewModel.markAsPaid(bookingWithJob.booking.id) },
-                            onOpenChat = {
-                                navController.navigate(Screen.Chat.createRoute(bookingWithJob.booking.id))
-                            },
-                            onLeaveReview = {
-                                navController.navigate(
-                                    Screen.Review.createRoute(
-                                        bookingWithJob.booking.id,
-                                        bookingWithJob.booking.artisanId
+            when {
+                isLoading && bookings.isEmpty() -> {
+                    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(3) { BookingCardSkeleton() }
+                    }
+                }
+                error != null -> {
+                    Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(16.dp))
+                }
+                bookings.isEmpty() -> {
+                    EmptyState(
+                        icon = Icons.Default.EventNote,
+                        title = "No bookings yet",
+                        subtitle = if (isArtisan) "Accept a job bid to create your first booking." else "Post a job and accept a bid to create your first booking.",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(bookings) { bookingWithJob ->
+                            BookingCard(
+                                bookingWithJob = bookingWithJob,
+                                isArtisan = isArtisan,
+                                onUpdateStatus = { newStatus -> viewModel.updateStatus(bookingWithJob.booking.id, newStatus) },
+                                onMarkPaid = { viewModel.markAsPaid(bookingWithJob.booking.id) },
+                                onOpenChat = {
+                                    navController.navigate(Screen.Chat.createRoute(bookingWithJob.booking.id))
+                                },
+                                onLeaveReview = {
+                                    navController.navigate(
+                                        Screen.Review.createRoute(
+                                            bookingWithJob.booking.id,
+                                            bookingWithJob.booking.artisanId
+                                        )
                                     )
-                                )
-                            }
-                        )
+                                }
+                            )
+                        }
                     }
                 }
             }

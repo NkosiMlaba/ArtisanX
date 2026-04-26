@@ -1,4 +1,4 @@
-package com.example.artisanx.data.repository
+﻿package com.example.artisanx.data.repository
 
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.util.Resource
@@ -7,6 +7,7 @@ import io.appwrite.models.Session
 import io.appwrite.models.User
 import io.appwrite.services.Account
 import javax.inject.Inject
+import com.example.artisanx.util.isSessionExpired
 
 class AuthRepositoryImpl @Inject constructor(
     private val account: Account
@@ -26,6 +27,7 @@ class AuthRepositoryImpl @Inject constructor(
             )
             Resource.Success(user)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "An unknown error occurred during registration.")
         }
@@ -36,6 +38,7 @@ class AuthRepositoryImpl @Inject constructor(
             val session = account.createEmailPasswordSession(email, password)
             Resource.Success(session)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "An unknown error occurred during login.")
         }
@@ -46,6 +49,7 @@ class AuthRepositoryImpl @Inject constructor(
             account.deleteSession("current")
             Resource.Success(Unit)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             e.printStackTrace()
             Resource.Error(e.message ?: "An unknown error occurred during logout.")
         }
@@ -56,6 +60,7 @@ class AuthRepositoryImpl @Inject constructor(
             val user = account.get()
             Resource.Success(user)
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             Resource.Error(e.message ?: "Could not get current user.")
         }
     }
@@ -65,6 +70,7 @@ class AuthRepositoryImpl @Inject constructor(
             account.getSession("current")
             true
         } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
             false
         }
     }

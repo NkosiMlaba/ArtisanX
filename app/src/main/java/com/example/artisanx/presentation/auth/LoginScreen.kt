@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.R
+import com.example.artisanx.presentation.navigation.Screen
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,6 +121,10 @@ fun LoginScreen(
 
                 TextButton(onClick = { navController.navigate("register") }) {
                     Text("Don't have an account? Register")
+                }
+
+                TextButton(onClick = { navController.navigate(Screen.PrivacyPolicy.route) }) {
+                    Text("Privacy Policy", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

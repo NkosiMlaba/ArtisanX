@@ -16,6 +16,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.artisanx.presentation.common.ChatListSkeleton
+import com.example.artisanx.presentation.common.EmptyState
 import com.example.artisanx.presentation.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,37 +37,29 @@ fun ChatListScreen(
             onRefresh = { viewModel.loadChats() },
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
-            if (!isLoading && previews.isEmpty()) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Message,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outlineVariant
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "No active conversations",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Chats open once a booking is accepted",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outlineVariant
+            when {
+                isLoading && previews.isEmpty() -> {
+                    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
+                        items(4) { ChatListSkeleton() }
+                    }
+                }
+                previews.isEmpty() -> {
+                    EmptyState(
+                        icon = Icons.AutoMirrored.Filled.Message,
+                        title = "No active conversations",
+                        subtitle = "Chats open once a booking is accepted.",
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(previews) { preview ->
-                        ChatPreviewItem(
-                            preview = preview,
-                            onClick = { navController.navigate(Screen.Chat.createRoute(preview.bookingId)) }
-                        )
-                        HorizontalDivider()
+                else -> {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(previews) { preview ->
+                            ChatPreviewItem(
+                                preview = preview,
+                                onClick = { navController.navigate(Screen.Chat.createRoute(preview.bookingId)) }
+                            )
+                            HorizontalDivider()
+                        }
                     }
                 }
             }
