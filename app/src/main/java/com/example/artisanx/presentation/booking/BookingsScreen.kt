@@ -90,6 +90,8 @@ fun BookingCard(
 ) {
     val booking = bookingWithJob.booking
     val job = bookingWithJob.job
+    val otherPartyName = bookingWithJob.otherPartyName
+    val isReviewed = bookingWithJob.isReviewed
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -98,12 +100,24 @@ fun BookingCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            if (job != null) {
-                Text(
-                    text = job.category,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (job != null) {
+                    Text(
+                        text = job.category,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (otherPartyName.isNotBlank()) {
+                    Text(
+                        text = if (isArtisan) "Client: $otherPartyName" else "Artisan: $otherPartyName",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -157,8 +171,17 @@ fun BookingCard(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-                    Button(onClick = onLeaveReview, modifier = Modifier.fillMaxWidth()) {
-                        Text("Leave a Review")
+                    if (isReviewed) {
+                        OutlinedButton(
+                            onClick = onLeaveReview,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("View Your Review")
+                        }
+                    } else {
+                        Button(onClick = onLeaveReview, modifier = Modifier.fillMaxWidth()) {
+                            Text("Leave a Review")
+                        }
                     }
                 }
             }

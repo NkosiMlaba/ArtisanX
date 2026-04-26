@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.artisanx.domain.model.Bid
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,8 +68,12 @@ fun BidsListScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(bids) { bid ->
-                        BidCard(bid = bid, jobAssigned = jobIsAssigned, onAccept = { viewModel.acceptBid(bid) })
+                    items(bids) { bidWithArtisan ->
+                        BidCard(
+                            bidWithArtisan = bidWithArtisan,
+                            jobAssigned = jobIsAssigned,
+                            onAccept = { viewModel.acceptBid(bidWithArtisan) }
+                        )
                     }
                 }
             }
@@ -78,26 +82,83 @@ fun BidsListScreen(
 }
 
 @Composable
-fun BidCard(bid: Bid, jobAssigned: Boolean, onAccept: () -> Unit) {
+fun BidCard(bidWithArtisan: BidWithArtisan, jobAssigned: Boolean, onAccept: () -> Unit) {
+    val bid = bidWithArtisan.bid
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Artisan info row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Column {
+                    Text(
+                        text = bidWithArtisan.artisanName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (bidWithArtisan.artisanBadge.isNotBlank()) {
+                        Text(
+                            text = bidWithArtisan.artisanBadge,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                // Rating display
+                Column(horizontalAlignment = Alignment.End) {
+                    if (bidWithArtisan.artisanReviewCount > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = String.format("%.1f", bidWithArtisan.artisanRating),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = " (${bidWithArtisan.artisanReviewCount})",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "New",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    StatusChip(status = bid.status)
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Bid details
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
                     text = "R${bid.priceOffer}",
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
-                StatusChip(status = bid.status)
+                Text(
+                    text = "Est. ${bid.estimatedHours}h",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Est. ${bid.estimatedHours} hours", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = bid.message, style = MaterialTheme.typography.bodyMedium)
 
@@ -116,8 +177,8 @@ fun BidCard(bid: Bid, jobAssigned: Boolean, onAccept: () -> Unit) {
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Accept this bid?") },
-            text = { Text("Accepting this bid will reject all other bids and create a booking for R${bid.priceOffer}.") },
+            title = { Text("Accept ${bidWithArtisan.artisanName}'s bid?") },
+            text = { Text("This will reject all other bids and create a booking for R${bid.priceOffer}. This cannot be undone.") },
             confirmButton = {
                 TextButton(onClick = { showConfirmDialog = false; onAccept() }) {
                     Text("Accept")

@@ -9,6 +9,7 @@ import com.example.artisanx.domain.model.ChatMessage
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BookingRepository
 import com.example.artisanx.domain.repository.ChatRepository
+import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -24,6 +25,7 @@ class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val bookingRepository: BookingRepository,
     private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -41,6 +43,9 @@ class ChatViewModel @Inject constructor(
     private val _currentUserId = mutableStateOf("")
     val currentUserId: State<String> = _currentUserId
 
+    private val _otherPartyName = mutableStateOf("Chat")
+    val otherPartyName: State<String> = _otherPartyName
+
     private val _isLoading = mutableStateOf(true)
     val isLoading: State<Boolean> = _isLoading
 
@@ -50,16 +55,39 @@ class ChatViewModel @Inject constructor(
     private var pollJob: Job? = null
 
     init {
-        loadUserAndMessages()
+        loadUserAndContext()
         startPolling()
     }
 
-    private fun loadUserAndMessages() {
+    private fun loadUserAndContext() {
         viewModelScope.launch {
             val userRes = authRepository.getCurrentUser()
-            if (userRes is Resource.Success && userRes.data != null) {
-                _currentUserId.value = userRes.data.id
+            if (userRes !is Resource.Success || userRes.data == null) return@launch
+            val userId = userRes.data.id
+            _currentUserId.value = userId
+
+            // Load booking to find the other party
+            val bookingRes = bookingRepository.getBookingById(bookingId)
+            if (bookingRes is Resource.Success && bookingRes.data != null) {
+                val booking = bookingRes.data
+                val otherUserId = if (booking.artisanId == userId) booking.customerId else booking.artisanId
+                val isOtherArtisan = booking.artisanId != userId
+
+                // Fetch the other party's name from their profile
+                val name = if (isOtherArtisan) {
+                    val profileRes = profileRepository.getArtisanProfile(otherUserId)
+                    if (profileRes is Resource.Success) {
+                        profileRes.data?.data?.get("fullName") as? String ?: "Artisan"
+                    } else "Artisan"
+                } else {
+                    val profileRes = profileRepository.getUserProfile(otherUserId)
+                    if (profileRes is Resource.Success) {
+                        profileRes.data?.data?.get("fullName") as? String ?: "Customer"
+                    } else "Customer"
+                }
+                _otherPartyName.value = name
             }
+
             refreshMessages()
             _isLoading.value = false
         }

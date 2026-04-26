@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.artisanx.data.local.DataStoreManager
+import com.example.artisanx.domain.model.Review
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.ProfileRepository
+import com.example.artisanx.domain.repository.ReviewRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.appwrite.models.Document
@@ -21,6 +23,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    private val reviewRepository: ReviewRepository,
     private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
 
@@ -49,6 +52,9 @@ class ProfileViewModel @Inject constructor(
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
 
+    private val _reviews = mutableStateOf<List<Review>>(emptyList())
+    val reviews: State<List<Review>> = _reviews
+
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
@@ -70,6 +76,11 @@ class ProfileViewModel @Inject constructor(
                         val profileRes = profileRepository.getArtisanProfile(userId)
                         if (profileRes is Resource.Success && profileRes.data != null) {
                             _profileDoc.value = profileRes.data
+                        }
+                        // Load this artisan's reviews
+                        val reviewsRes = reviewRepository.getReviewsForArtisan(userId)
+                        if (reviewsRes is Resource.Success) {
+                            _reviews.value = reviewsRes.data ?: emptyList()
                         }
                     } else {
                         val profileRes = profileRepository.getUserProfile(userId)

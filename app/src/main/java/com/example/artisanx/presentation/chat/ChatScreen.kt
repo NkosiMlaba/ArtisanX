@@ -37,6 +37,7 @@ fun ChatScreen(
     val isSending = viewModel.isSending.value
     val isLoading = viewModel.isLoading.value
     val currentUserId = viewModel.currentUserId.value
+    val otherPartyName = viewModel.otherPartyName.value
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -57,7 +58,7 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chat") },
+                title = { Text(otherPartyName) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

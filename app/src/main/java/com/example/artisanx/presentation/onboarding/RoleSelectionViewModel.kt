@@ -25,12 +25,24 @@ class RoleSelectionViewModel @Inject constructor(
     fun selectRole(role: String) {
         viewModelScope.launch {
             dataStoreManager.saveUserRole(role)
-            
-            // Sync with Appwrite
+
+            // Upsert user profile with chosen role
             val userRes = authRepository.getCurrentUser()
-            if (userRes is Resource.Success) {
-                val userId = userRes.data?.id ?: ""
-                profileRepository.updateUserProfile(userId, mapOf("role" to role))
+            if (userRes is Resource.Success && userRes.data != null) {
+                val user = userRes.data
+                val existingProfile = profileRepository.getUserProfile(user.id)
+                if (existingProfile is Resource.Success && existingProfile.data != null) {
+                    // Profile exists — update role
+                    profileRepository.updateUserProfile(user.id, mapOf("role" to role))
+                } else {
+                    // No profile yet — create it
+                    profileRepository.createUserProfile(
+                        userId = user.id,
+                        fullName = user.name,
+                        email = user.email,
+                        role = role
+                    )
+                }
             }
 
             if (role == "customer") {

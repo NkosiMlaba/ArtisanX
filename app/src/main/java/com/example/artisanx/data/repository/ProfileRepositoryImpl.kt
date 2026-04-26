@@ -4,7 +4,9 @@ import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
 import io.appwrite.ID
+import io.appwrite.Permission
 import io.appwrite.Query
+import io.appwrite.Role
 import io.appwrite.models.Document
 import io.appwrite.services.Databases
 import java.text.SimpleDateFormat
@@ -44,7 +46,12 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                                             "profileImageId" to "",
                                             "role" to role,
                                             "createdAt" to getCurrentIso8601Date()
-                                    )
+                                    ),
+                            permissions = listOf(
+                                    Permission.read(Role.users()),
+                                    Permission.update(Role.user(userId)),
+                                    Permission.delete(Role.user(userId))
+                            )
                     )
             Resource.Success(document)
         } catch (e: Exception) {
@@ -118,7 +125,12 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                                             "avgRating" to 0.0,
                                             "reviewCount" to 0,
                                             "createdAt" to getCurrentIso8601Date()
-                                    )
+                                    ),
+                            permissions = listOf(
+                                    Permission.read(Role.users()),
+                                    Permission.update(Role.user(userId)),
+                                    Permission.delete(Role.user(userId))
+                            )
                     )
             Resource.Success(document)
         } catch (e: Exception) {

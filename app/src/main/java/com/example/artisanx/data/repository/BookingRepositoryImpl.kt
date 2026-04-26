@@ -115,7 +115,23 @@ class BookingRepositoryImpl @Inject constructor(
                 documentId = bookingId,
                 data = updates
             )
-            Resource.Success(document.data.toBooking(document.id, document.createdAt))
+            val booking = document.data.toBooking(document.id, document.createdAt)
+
+            // When booking completes, cascade to update job status too
+            if (status == "completed" && booking.jobId.isNotBlank()) {
+                try {
+                    databases.updateDocument(
+                        databaseId = Constants.DATABASE_ID,
+                        collectionId = Constants.COLLECTION_JOBS,
+                        documentId = booking.jobId,
+                        data = mapOf("status" to "completed")
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace() // Non-fatal: log but don't fail the booking update
+                }
+            }
+
+            Resource.Success(booking)
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update booking status")

@@ -126,32 +126,64 @@ fun JobDetailScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Action buttons based on role
-                    if (userRole == "artisan" && job.status == "open") {
-                        if (hasAlreadyBid) {
-                            OutlinedButton(
-                                onClick = {},
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = false
-                            ) {
-                                Text("Already Bid on This Job")
+                    // Action buttons — artisan view
+                    if (userRole == "artisan") {
+                        when {
+                            job.status == "open" && !hasAlreadyBid -> {
+                                Button(
+                                    onClick = { navController.navigate(Screen.BidSubmit.createRoute(job.id)) },
+                                    modifier = Modifier.fillMaxWidth().height(50.dp)
+                                ) {
+                                    Text("Place a Bid")
+                                }
                             }
-                        } else {
-                            Button(
-                                onClick = { navController.navigate(Screen.BidSubmit.createRoute(job.id)) },
-                                modifier = Modifier.fillMaxWidth().height(50.dp)
-                            ) {
-                                Text("Place a Bid")
+                            job.status == "open" && hasAlreadyBid -> {
+                                OutlinedButton(
+                                    onClick = {},
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = false
+                                ) {
+                                    Text("Bid Submitted — Awaiting Response")
+                                }
+                            }
+                            hasAlreadyBid && job.status in listOf("assigned", "in_progress") -> {
+                                FilledTonalButton(
+                                    onClick = { navController.navigate(Screen.ArtisanBookings.route) },
+                                    modifier = Modifier.fillMaxWidth().height(50.dp)
+                                ) {
+                                    Text("View Your Booking")
+                                }
+                            }
+                            job.status == "completed" -> {
+                                SuggestionChip(
+                                    onClick = {},
+                                    label = { Text("Job Completed") },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
 
-                    if (isOwnJob && job.status == "open") {
-                        Button(
-                            onClick = { navController.navigate(Screen.BidsList.createRoute(job.id)) },
-                            modifier = Modifier.fillMaxWidth().height(50.dp)
-                        ) {
-                            Text("View Bids ($bidCount)")
+                    // Action buttons — customer (job owner) view
+                    if (isOwnJob) {
+                        when (job.status) {
+                            "open" -> Button(
+                                onClick = { navController.navigate(Screen.BidsList.createRoute(job.id)) },
+                                modifier = Modifier.fillMaxWidth().height(50.dp)
+                            ) {
+                                Text(if (bidCount > 0) "View Bids ($bidCount)" else "View Bids (No bids yet)")
+                            }
+                            "assigned", "in_progress" -> FilledTonalButton(
+                                onClick = { navController.navigate(Screen.CustomerBookings.route) },
+                                modifier = Modifier.fillMaxWidth().height(50.dp)
+                            ) {
+                                Text("View Booking")
+                            }
+                            "completed" -> SuggestionChip(
+                                onClick = {},
+                                label = { Text("Job Completed") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
