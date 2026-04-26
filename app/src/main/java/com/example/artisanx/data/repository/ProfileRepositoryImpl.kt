@@ -89,7 +89,16 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
             tradeCategory: String,
             skills: String,
             serviceArea: String,
-            isStudent: Boolean
+            isStudent: Boolean,
+            institutionName: String,
+            studentNumber: String,
+            studentCardFileId: String,
+            courseField: String,
+            gradYear: Int,
+            idFileId: String,
+            certifications: String,
+            yearsExperience: Int,
+            workPhotoIds: List<String>
     ): Resource<Document<Map<String, Any>>> {
         return try {
             val document =
@@ -104,25 +113,25 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                                             "email" to email,
                                             "phone" to phone,
                                             "isStudent" to isStudent,
-                                            "institutionName" to "",
-                                            "studentNumber" to "",
-                                            "studentCardFileId" to "",
-                                            "courseField" to "",
-                                            "gradYear" to 0,
-                                            "idFileId" to "",
+                                            "institutionName" to institutionName,
+                                            "studentNumber" to studentNumber,
+                                            "studentCardFileId" to studentCardFileId,
+                                            "courseField" to courseField,
+                                            "gradYear" to gradYear,
+                                            "idFileId" to idFileId,
                                             "tradeCategory" to tradeCategory,
                                             "skills" to skills,
                                             "serviceArea" to serviceArea,
                                             "serviceRadiusKm" to 10.0,
                                             "latitude" to 0.0,
                                             "longitude" to 0.0,
-                                            "workPhotoIds" to listOf<String>(),
-                                            "certifications" to "",
-                                            "yearsExperience" to 0,
+                                            "workPhotoIds" to workPhotoIds,
+                                            "certifications" to certifications,
+                                            "yearsExperience" to yearsExperience,
                                             "verified" to false,
                                             "badge" to
                                                     (if (isStudent) "Student Artisan"
-                                                    else "Verified Artisan"),
+                                                    else "Independent Artisan"),
                                             "avgRating" to 0.0,
                                             "reviewCount" to 0,
                                             "createdAt" to getCurrentIso8601Date()

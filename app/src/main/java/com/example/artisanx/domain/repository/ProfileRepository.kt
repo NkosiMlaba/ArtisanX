@@ -21,7 +21,16 @@ interface ProfileRepository {
         tradeCategory: String,
         skills: String,
         serviceArea: String,
-        isStudent: Boolean
+        isStudent: Boolean,
+        institutionName: String = "",
+        studentNumber: String = "",
+        studentCardFileId: String = "",
+        courseField: String = "",
+        gradYear: Int = 0,
+        idFileId: String = "",
+        certifications: String = "",
+        yearsExperience: Int = 0,
+        workPhotoIds: List<String> = emptyList()
     ): Resource<Document<Map<String, Any>>>
 
     suspend fun getArtisanProfile(userId: String): Resource<Document<Map<String, Any>>>

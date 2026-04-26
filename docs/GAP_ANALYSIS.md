@@ -132,11 +132,12 @@ These are gaps where a flow either doesn't work at all or is missing a critical 
 - **Student:** student card photo upload, institution, student number, course, grad year
 - **Independent:** ID upload, work photos (required), certifications, years experience
 
-**Current state:** Single-screen form with phone, trade, skills, service area text field, and a student toggle checkbox. No file uploads, no branching UI, no stepper.
+**✅ RESOLVED (2026-04-26):** Replaced with a 3-step form:
+- Step 1: Phone, trade category (dropdown), service area, student/independent toggle
+- Step 2 (branches): Student → institution/number/course/grad year/student card upload | Independent → years experience/certifications/ID document upload
+- Step 3: Skills description (char counter, 2000 max), up to 3 work photos uploaded to Appwrite Storage
 
-**What to add:** Multi-step `Pager` or manual step state. Step 1: student/independent choice. Step 2a or 2b: path-specific fields with `ActivityResultContracts.GetContent` for file picks + Appwrite Storage upload. Step 3: service area map picker (reuse `LocationPickerScreen`). Step 4: review + submit.
-
-This is the largest remaining spec item.
+All file uploads go to `BUCKET_ARTISANSX_FILES` via `Storage.createFile`. `createArtisanProfile` now stores all identity and portfolio fields in the Appwrite document at creation time.
 
 ---
 
@@ -219,7 +220,7 @@ Explicitly deferred in README §6 — do not implement for academic submission:
 | P2-C | Edit bid | S |
 | P2-D | Deep link from notification tap | S |
 | P2-E | Char counters on all text fields | S |
-| P2-F | Full artisan onboarding (student/independent) | XL |
+| P2-F | Full artisan onboarding (student/independent) | ~~XL~~ ✅ |
 | P2-G | Photo upload in chat | M |
 | P2-H | Job photo upload | M |
 | P2-I | Artisan service area map in profile | S |

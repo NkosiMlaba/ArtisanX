@@ -161,7 +161,50 @@ Fields that exist in the schema but are silently ignored are bugs, not gaps. Cur
 
 ---
 
-## 10. What "Done" Means
+## 10. Brand Color Palette — Always Use These, Never Default Material Colors
+
+`dynamicColor` is **disabled**. Do not re-enable it. All screens use the tokens below.
+
+### Light scheme (default)
+| Token | Value | Usage |
+|-------|-------|-------|
+| `primary` | `#5840C3` (indigo) | Buttons, FABs, active nav indicators, progress bars |
+| `onPrimary` | `#FFFFFF` | Text/icons on primary surfaces |
+| `primaryContainer` | `#E6E0FF` | Chip backgrounds, highlighted cards |
+| `onPrimaryContainer` | `#1A0065` | Text on primaryContainer |
+| `secondary` | `#F8DA5D` (gold) | Accent chips, badges, star ratings, secondary buttons |
+| `onSecondary` | `#1A1200` | Text on secondary surfaces |
+| `secondaryContainer` | `#FFF8C5` | Light gold backgrounds |
+| `tertiary` | `#007A77` (teal) | Success states, "active"/"verified" badges |
+| `onTertiary` | `#FFFFFF` | Text on teal surfaces |
+| `background` | `#FFFBFF` | Screen backgrounds |
+| `surface` | `#FFFFFF` | Cards, sheets, dialogs |
+| `surfaceVariant` | `#E6E0F0` | Input field fills, dividers |
+| `outline` | `#7A757F` | Input borders, dividers |
+| `error` | `#BA1A1A` | Error messages, destructive action indicators |
+
+### Dark scheme
+| Token | Value |
+|-------|-------|
+| `primary` | `#CBBEFF` |
+| `onPrimary` | `#2C0095` |
+| `primaryContainer` | `#4227AA` |
+| `secondary` | `#E3C64B` |
+| `background` | `#1C1B1F` |
+| `surface` | `#1C1B1F` |
+
+### Logo usage
+- `R.drawable.artisanx_logo` — transparent background, use on any colored surface.
+- `R.drawable.artisanx_logo_bg` — indigo background version, use on white/light surfaces.
+- Display logo at `120.dp` on auth screens and the splash/loading screen.
+- Do **not** use the old text-only "ArtisanX" heading by itself — always pair text with the logo image.
+
+### Code reference
+Colors are defined in `ui/theme/Color.kt`. Scheme wiring is in `ui/theme/Theme.kt`. Reference via `MaterialTheme.colorScheme.*` — never hardcode hex values in composables.
+
+---
+
+## 12. What "Done" Means
 
 A feature is done when:
 
