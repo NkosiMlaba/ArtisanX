@@ -143,41 +143,25 @@ All file uploads go to `BUCKET_ARTISANSX_FILES` via `Storage.createFile`. `creat
 
 ### P2-G: Photo Upload in Chat
 
-**Spec (README §4.1):** "Send photos (camera/gallery → upload to storage → store fileId in message)."
-
-**Current state:** `chat_messages.imageFileId` exists in schema but `ChatScreen` has only text input.
-
-**What to add:** Image attach button in chat input row. `ActivityResultContracts.GetContent` picker → upload to `artisansx_files` bucket → store `fileId` in message document. Render image messages with `AsyncImage` (Coil) in `MessageBubble`.
+**✅ RESOLVED (2026-04-26):** Attach icon in chat input row opens image picker → `AppwriteFileUtils.uploadFromUri()` → `chatRepository.sendImageMessage()` stores `imageFileId`. `MessageBubble` renders `AsyncImage` from `AppwriteFileUtils.fileViewUrl(fileId)`. Confirmed working on device (fileId logged on success).
 
 ---
 
 ### P2-H: Job Photo Upload
 
-**Spec (README §7):** `jobs.photoIds` string array in schema. README §5.4 implies this is part of job posting UX.
-
-**Current state:** `PostJobScreen` has no image picker. `photoIds` always empty.
-
-**What to add:** Optional image attach row in `PostJobScreen`. Upload to storage, store IDs in job document. Display in `JobDetailScreen`.
+**✅ RESOLVED (2026-04-26):** Photo picker grid on `PostJobScreen` (up to 3, with remove buttons). Upload via `AppwriteFileUtils.uploadFromUri()`, stored in `jobs.photoIds`. `JobDetailScreen` displays photo row with `AsyncImage`. Upload confirmed working on device. Root cause of earlier upload failures: bucket `artisansx_files` was missing `create` permission for `users` (fixed in Appwrite console) + `PostJobViewModel` wasn't caching userId at init time (fixed with `cachedUserId` pattern).
 
 ---
 
 ### P2-I: Artisan Service Area Map in Profile
 
-**Spec (README §3.1):** "On `ArtisanProfile`: artisan sets their service area center + radius on a map."
-
-**Current state:** Profile edit has a text field for `serviceArea` and numeric field for radius, but no map picker.
-
-**What to add:** "Set on map" button on artisan profile edit → opens `LocationPickerScreen` → stores returned lat/lng + address.
+**✅ RESOLVED (2026-04-26):** `LocationOn` icon button added to the Service Area text field in `ArtisanProfileScreen` edit mode. Tapping it opens `LocationPickerScreen` inline (via `showMapPicker` state). On selection, `editServiceArea`, `editLatitude`, `editLongitude` are updated in `ProfileViewModel` and saved to Appwrite.
 
 ---
 
 ### P2-J: Map View Toggle on Job Browse
 
-**Spec (README §3.1):** "Add a 'Map View' toggle — shows jobs as markers on map."
-
-**Current state:** List-only browse.
-
-**What to add:** Toggle icon in `JobBrowseScreen` top bar. Map view renders a `GoogleMap` with a `Marker` per job, tapping a marker shows a bottom sheet with the job card.
+**✅ RESOLVED (2026-04-26):** Map/List toggle icon added to `JobBrowseScreen` top bar. Map view renders `GoogleMap` with a `Marker` per job (filtered to jobs with non-zero coords). Tapping a marker shows an `AlertDialog` with job title, category, budget, address, distance, and "View Details" button that navigates to `JobDetailScreen`. List view preserved when toggle is off.
 
 ---
 

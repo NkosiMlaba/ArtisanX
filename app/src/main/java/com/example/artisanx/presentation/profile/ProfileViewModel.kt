@@ -48,6 +48,8 @@ class ProfileViewModel @Inject constructor(
     val editTradeCategory = mutableStateOf("")
     val editSkills = mutableStateOf("")
     val editServiceArea = mutableStateOf("")
+    val editLatitude = mutableStateOf(0.0)
+    val editLongitude = mutableStateOf(0.0)
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
@@ -105,6 +107,12 @@ class ProfileViewModel @Inject constructor(
                 editTradeCategory.value = docData["tradeCategory"] as? String ?: ""
                 editSkills.value = docData["skills"] as? String ?: ""
                 editServiceArea.value = docData["serviceArea"] as? String ?: ""
+                editLatitude.value = when (val v = docData["latitude"]) {
+                    is Double -> v; is Float -> v.toDouble(); is Int -> v.toDouble(); else -> 0.0
+                }
+                editLongitude.value = when (val v = docData["longitude"]) {
+                    is Double -> v; is Float -> v.toDouble(); is Int -> v.toDouble(); else -> 0.0
+                }
             }
             _isEditing.value = true
         }
@@ -125,7 +133,9 @@ class ProfileViewModel @Inject constructor(
                     "phone" to editPhone.value,
                     "tradeCategory" to editTradeCategory.value,
                     "skills" to editSkills.value,
-                    "serviceArea" to editServiceArea.value
+                    "serviceArea" to editServiceArea.value,
+                    "latitude" to editLatitude.value,
+                    "longitude" to editLongitude.value
                 )
                 when (val res = profileRepository.updateArtisanProfile(userId, updates)) {
                     is Resource.Success -> {

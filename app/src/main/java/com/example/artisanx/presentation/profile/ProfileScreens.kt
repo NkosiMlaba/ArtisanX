@@ -5,11 +5,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -17,6 +22,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.artisanx.presentation.common.LocationPickerScreen
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,6 +126,23 @@ fun ArtisanProfileScreen(
     val isLoading = viewModel.isLoading.value
     val isEditing = viewModel.isEditing.value
     val reviews = viewModel.reviews.value
+    var showMapPicker by remember { mutableStateOf(false) }
+
+    if (showMapPicker) {
+        val initLat = viewModel.editLatitude.value.takeIf { it != 0.0 } ?: -29.8587
+        val initLng = viewModel.editLongitude.value.takeIf { it != 0.0 } ?: 31.0218
+        LocationPickerScreen(
+            initialLocation = LatLng(initLat, initLng),
+            onLocationSelected = { result ->
+                viewModel.editServiceArea.value = result.address
+                viewModel.editLatitude.value = result.latitude
+                viewModel.editLongitude.value = result.longitude
+                showMapPicker = false
+            },
+            onDismiss = { showMapPicker = false }
+        )
+        return
+    }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collectLatest { event ->
@@ -181,7 +205,12 @@ fun ArtisanProfileScreen(
                             value = viewModel.editServiceArea.value,
                             onValueChange = { viewModel.editServiceArea.value = it },
                             label = { Text("Service Area") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            trailingIcon = {
+                                IconButton(onClick = { showMapPicker = true }) {
+                                    Icon(Icons.Filled.LocationOn, contentDescription = "Set on map")
+                                }
+                            }
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(

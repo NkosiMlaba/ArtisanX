@@ -7,7 +7,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -21,6 +23,12 @@ import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.presentation.navigation.Screen
 import com.example.artisanx.util.LocationUtils
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,14 +43,49 @@ fun JobBrowseScreen(
     val selectedSort = viewModel.selectedSort.value
 
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var isMapView by remember { mutableStateOf(false) }
+    var selectedMapJob by remember { mutableStateOf<Job?>(null) }
 
     val categories = listOf("All", "Plumbing", "Electrical", "Cleaning", "Carpentry", "Painting", "Tiling", "Roofing", "General", "Other")
+
+    if (selectedMapJob != null) {
+        val job = selectedMapJob!!
+        AlertDialog(
+            onDismissRequest = { selectedMapJob = null },
+            title = { Text(job.title, style = MaterialTheme.typography.titleMedium) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(job.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    if (job.budget > 0) Text("Budget: R${job.budget.toInt()}", style = MaterialTheme.typography.bodyMedium)
+                    if (job.address.isNotBlank()) Text(job.address, style = MaterialTheme.typography.bodySmall)
+                    viewModel.distanceKmFor(job)?.let { km ->
+                        Text(LocationUtils.formatDistanceKm(km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    selectedMapJob = null
+                    navController.navigate(Screen.JobDetail.createRoute(job.id))
+                }) { Text("View Details") }
+            },
+            dismissButton = {
+                TextButton(onClick = { selectedMapJob = null }) { Text("Close") }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Browse Open Jobs") },
                 actions = {
+                    IconButton(onClick = { isMapView = !isMapView }) {
+                        Icon(
+                            imageVector = if (isMapView) Icons.Default.List else Icons.Default.Map,
+                            contentDescription = if (isMapView) "List view" else "Map view"
+                        )
+                    }
                     Box {
                         TextButton(
                             onClick = { sortMenuExpanded = true }
@@ -91,27 +134,50 @@ fun JobBrowseScreen(
                 }
             }
 
-            PullToRefreshBox(
-                isRefreshing = isLoading,
-                onRefresh = { viewModel.loadJobs() },
-                modifier = Modifier.fillMaxSize()
-            ) {
-                if (error != null) {
-                    Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
-                } else if (jobs.isEmpty() && !isLoading) {
-                    Text(text = "No open jobs found in this category.", modifier = Modifier.align(Alignment.Center))
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(jobs) { job ->
-                            JobItemBrowse(
-                                job = job,
-                                distanceKm = viewModel.distanceKmFor(job),
-                                onClick = { navController.navigate(Screen.JobDetail.createRoute(job.id)) }
-                            )
+            if (isMapView) {
+                val jobsWithCoords = jobs.filter { it.latitude != 0.0 || it.longitude != 0.0 }
+                val center = jobsWithCoords.firstOrNull()
+                    ?.let { LatLng(it.latitude, it.longitude) }
+                    ?: LatLng(-29.8587, 31.0218)
+                val cameraPositionState = rememberCameraPositionState {
+                    position = CameraPosition.fromLatLngZoom(center, 11f)
+                }
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState
+                ) {
+                    jobsWithCoords.forEach { job ->
+                        Marker(
+                            state = MarkerState(position = LatLng(job.latitude, job.longitude)),
+                            title = job.title,
+                            snippet = "R${job.budget.toInt()} • ${job.category}",
+                            onClick = { selectedMapJob = job; false }
+                        )
+                    }
+                }
+            } else {
+                PullToRefreshBox(
+                    isRefreshing = isLoading,
+                    onRefresh = { viewModel.loadJobs() },
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (error != null) {
+                        Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
+                    } else if (jobs.isEmpty() && !isLoading) {
+                        Text(text = "No open jobs found in this category.", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(jobs) { job ->
+                                JobItemBrowse(
+                                    job = job,
+                                    distanceKm = viewModel.distanceKmFor(job),
+                                    onClick = { navController.navigate(Screen.JobDetail.createRoute(job.id)) }
+                                )
+                            }
                         }
                     }
                 }
