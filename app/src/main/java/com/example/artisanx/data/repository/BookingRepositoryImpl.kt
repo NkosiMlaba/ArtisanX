@@ -1,10 +1,13 @@
 package com.example.artisanx.data.repository
 
+import android.content.Context
+import com.example.artisanx.ArtisansXFirebaseService
 import com.example.artisanx.domain.model.Booking
 import com.example.artisanx.domain.model.toBooking
 import com.example.artisanx.domain.repository.BookingRepository
 import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.appwrite.ID
 import io.appwrite.Query
 import io.appwrite.services.Databases
@@ -15,7 +18,8 @@ import java.util.TimeZone
 import javax.inject.Inject
 
 class BookingRepositoryImpl @Inject constructor(
-    private val databases: Databases
+    private val databases: Databases,
+    @ApplicationContext private val context: Context
 ) : BookingRepository {
 
     private fun getCurrentIso8601Date(): String {
@@ -116,6 +120,17 @@ class BookingRepositoryImpl @Inject constructor(
                 data = updates
             )
             val booking = document.data.toBooking(document.id, document.createdAt)
+
+            // Notify relevant party of status change
+            val (notifTitle, notifBody) = when (status) {
+                "accepted" -> "Booking Accepted" to "The artisan accepted your booking. They'll be in touch soon."
+                "in_progress" -> "Job Started" to "The artisan has started work on your job."
+                "completed" -> "Job Completed" to "The job has been marked as complete. Please leave a review!"
+                else -> "" to ""
+            }
+            if (notifTitle.isNotBlank()) {
+                ArtisansXFirebaseService.showLocalNotification(context, notifTitle, notifBody)
+            }
 
             // When booking completes, cascade to update job status too
             if (status == "completed" && booking.jobId.isNotBlank()) {

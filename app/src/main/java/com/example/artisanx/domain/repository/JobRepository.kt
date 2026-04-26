@@ -12,6 +12,8 @@ interface JobRepository {
         category: String,
         address: String,
         budget: Double,
+        latitude: Double = 0.0,
+        longitude: Double = 0.0,
         urgency: String = "standard",
         jobType: String = "standard"
     ): Resource<Job>

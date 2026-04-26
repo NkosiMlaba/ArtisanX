@@ -81,6 +81,27 @@ class CreditsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun addCredits(artisanId: String, amount: Int): Resource<Int> {
+        return try {
+            val doc = getCreditDocument(artisanId)
+                ?: return Resource.Error("No credits record found")
+            val currentBalance = when (val b = doc.data["balance"]) {
+                is Int -> b; is Long -> b.toInt(); is Double -> b.toInt(); else -> 0
+            }
+            val newBalance = currentBalance + amount
+            databases.updateDocument(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_CREDITS,
+                documentId = doc.id,
+                data = mapOf("balance" to newBalance, "lastUpdated" to getCurrentIso8601Date())
+            )
+            Resource.Success(newBalance)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message ?: "Failed to add credits")
+        }
+    }
+
     override suspend fun deductCredits(artisanId: String, amount: Int): Resource<Int> {
         return try {
             val doc = getCreditDocument(artisanId)

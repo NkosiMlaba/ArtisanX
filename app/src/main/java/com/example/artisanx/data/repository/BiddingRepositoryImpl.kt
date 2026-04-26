@@ -1,10 +1,13 @@
 package com.example.artisanx.data.repository
 
+import android.content.Context
+import com.example.artisanx.ArtisansXFirebaseService
 import com.example.artisanx.domain.model.Bid
 import com.example.artisanx.domain.model.toBid
 import com.example.artisanx.domain.repository.BiddingRepository
 import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.appwrite.ID
 import io.appwrite.Query
 import io.appwrite.services.Databases
@@ -15,7 +18,8 @@ import java.util.TimeZone
 import javax.inject.Inject
 
 class BiddingRepositoryImpl @Inject constructor(
-    private val databases: Databases
+    private val databases: Databases,
+    @ApplicationContext private val context: Context
 ) : BiddingRepository {
 
     private fun getCurrentIso8601Date(): String {
@@ -179,6 +183,13 @@ class BiddingRepositoryImpl @Inject constructor(
                     "isPaid" to false,
                     "createdAt" to getCurrentIso8601Date()
                 )
+            )
+
+            // Notify the artisan their bid was accepted
+            ArtisansXFirebaseService.showLocalNotification(
+                context,
+                "Bid Accepted!",
+                "Your bid was accepted. Check your bookings to get started."
             )
 
             Resource.Success(Unit)

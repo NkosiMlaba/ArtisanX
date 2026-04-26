@@ -8,4 +8,6 @@ interface CreditsRepository {
     suspend fun initializeCredits(artisanId: String, initialBalance: Int = 5): Resource<Unit>
 
     suspend fun deductCredits(artisanId: String, amount: Int): Resource<Int>
+
+    suspend fun addCredits(artisanId: String, amount: Int): Resource<Int>
 }

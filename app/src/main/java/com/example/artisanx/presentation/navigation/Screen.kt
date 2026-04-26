@@ -40,4 +40,7 @@ sealed class Screen(val route: String) {
     object Review : Screen("review/{bookingId}/{artisanId}") {
         fun createRoute(bookingId: String, artisanId: String) = "review/$bookingId/$artisanId"
     }
+
+    // Credits
+    object BuyCredits : Screen("buy_credits")
 }

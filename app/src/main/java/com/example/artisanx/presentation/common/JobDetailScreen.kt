@@ -18,6 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.presentation.navigation.Screen
@@ -115,6 +121,31 @@ fun JobDetailScreen(
 
                     if (job.address.isNotBlank()) {
                         Text(text = "Location: ${job.address}", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // Show map with pin if lat/lng are set
+                    if (job.latitude != 0.0 || job.longitude != 0.0) {
+                        val jobLocation = LatLng(job.latitude, job.longitude)
+                        val cameraState = rememberCameraPositionState {
+                            position = CameraPosition.fromLatLngZoom(jobLocation, 14f)
+                        }
+                        GoogleMap(
+                            modifier = Modifier.fillMaxWidth().height(180.dp),
+                            cameraPositionState = cameraState,
+                            uiSettings = com.google.maps.android.compose.MapUiSettings(
+                                zoomControlsEnabled = false,
+                                scrollGesturesEnabled = false,
+                                zoomGesturesEnabled = false,
+                                tiltGesturesEnabled = false,
+                                rotationGesturesEnabled = false
+                            )
+                        ) {
+                            Marker(
+                                state = MarkerState(position = jobLocation),
+                                title = job.title
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 

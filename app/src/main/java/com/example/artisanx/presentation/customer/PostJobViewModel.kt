@@ -33,6 +33,9 @@ class PostJobViewModel @Inject constructor(
     private val _address = mutableStateOf("")
     val address: State<String> = _address
 
+    private val _latitude = mutableStateOf(0.0)
+    private val _longitude = mutableStateOf(0.0)
+
     private val _budget = mutableStateOf("")
     val budget: State<String> = _budget
 
@@ -54,6 +57,12 @@ class PostJobViewModel @Inject constructor(
     fun onCategoryChange(value: String) { _category.value = value }
     fun onAddressChange(value: String) { _address.value = value }
     fun onBudgetChange(value: String) { _budget.value = value }
+
+    fun onLocationSelected(address: String, lat: Double, lng: Double) {
+        _address.value = address
+        _latitude.value = lat
+        _longitude.value = lng
+    }
 
     fun generateAiDescription() {
         if (_description.value.isBlank()) {
@@ -101,7 +110,9 @@ class PostJobViewModel @Inject constructor(
                     description = _description.value,
                     category = _category.value,
                     address = _address.value.ifBlank { "Not specified" },
-                    budget = budgetVal
+                    budget = budgetVal,
+                    latitude = _latitude.value,
+                    longitude = _longitude.value
                 )
 
                 _isLoading.value = false

@@ -31,6 +31,8 @@ class JobRepositoryImpl @Inject constructor(
         category: String,
         address: String,
         budget: Double,
+        latitude: Double,
+        longitude: Double,
         urgency: String,
         jobType: String
     ): Resource<Job> {
@@ -45,8 +47,8 @@ class JobRepositoryImpl @Inject constructor(
                     "category" to category,
                     "description" to description,
                     "photoIds" to listOf<String>(),
-                    "latitude" to 0.0,
-                    "longitude" to 0.0,
+                    "latitude" to latitude,
+                    "longitude" to longitude,
                     "address" to address,
                     "budget" to budget,
                     "urgency" to urgency,

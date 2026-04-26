@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Bid
+import androidx.compose.foundation.layout.PaddingValues
 import com.example.artisanx.presentation.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +57,13 @@ fun ArtisanDashboardScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TextButton(
+                            onClick = { navController.navigate(Screen.BuyCredits.route) },
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("Buy more credits →", style = MaterialTheme.typography.labelMedium)
+                        }
                     }
                 }
             }

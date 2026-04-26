@@ -6,15 +6,16 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.artisanx.presentation.common.LocationPickerScreen
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +34,8 @@ fun PostJobScreen(
     val isAiLoading = viewModel.isAiLoading.value
     val aiSuggestion = viewModel.aiSuggestion.value
 
+    var showMapPicker by remember { mutableStateOf(false) }
+
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collectLatest { event ->
             when (event) {
@@ -40,6 +43,17 @@ fun PostJobScreen(
                 is PostJobViewModel.UiEvent.NavigateBack -> navController.popBackStack()
             }
         }
+    }
+
+    if (showMapPicker) {
+        LocationPickerScreen(
+            onLocationSelected = { result ->
+                viewModel.onLocationSelected(result.address, result.latitude, result.longitude)
+                showMapPicker = false
+            },
+            onDismiss = { showMapPicker = false }
+        )
+        return
     }
 
     Scaffold(
@@ -108,13 +122,40 @@ fun PostJobScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = address,
-                onValueChange = viewModel::onAddressChange,
-                label = { Text("Location / Address") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            // Location picker — shows map button + selected address
+            OutlinedCard(
+                onClick = { showMapPicker = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = if (address.isNotBlank()) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = if (address.isNotBlank()) address else "Tap to set job location on map",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (address.isNotBlank()) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (address.isBlank()) {
+                            Text(
+                                text = "Location / Address",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
@@ -158,14 +199,10 @@ fun PostJobScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.acceptAiSuggestion() }) {
-                    Text("Use This")
-                }
+                Button(onClick = { viewModel.acceptAiSuggestion() }) { Text("Use This") }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissAiSuggestion() }) {
-                    Text("Keep Mine")
-                }
+                TextButton(onClick = { viewModel.dismissAiSuggestion() }) { Text("Keep Mine") }
             }
         )
     }

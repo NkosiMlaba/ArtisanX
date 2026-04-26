@@ -28,6 +28,7 @@ import com.example.artisanx.presentation.bidding.BidsListScreen
 import com.example.artisanx.presentation.booking.BookingsScreen
 import com.example.artisanx.presentation.chat.ChatScreen
 import com.example.artisanx.presentation.common.JobDetailScreen
+import com.example.artisanx.presentation.credits.BuyCreditsScreen
 import com.example.artisanx.presentation.profile.*
 import com.example.artisanx.presentation.review.ReviewScreen
 
@@ -151,6 +152,11 @@ fun AppNavGraph(
             // Review
             composable(route = Screen.Review.route) {
                 ReviewScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+
+            // Buy Credits
+            composable(route = Screen.BuyCredits.route) {
+                BuyCreditsScreen(navController = navController, snackbarHostState = snackbarHostState)
             }
         }
     }
