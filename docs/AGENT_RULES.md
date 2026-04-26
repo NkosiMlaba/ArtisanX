@@ -89,39 +89,61 @@ A screen is **not done** until all of these are true:
 
 ---
 
-## 6. Testing Protocol — Feature Is Not Done Until Verified on Device
+## 6. Testing Protocol — MANDATORY After Every Feature
 
-Follow this sequence for every feature:
+**This is not optional.** Every session that writes or modifies code MUST end with a successful build, a running app on device, and a log review. Do not report a feature as done until all four steps below pass.
 
 ### Step 1 — Build
 ```bash
-./gradlew assembleDebug 2>&1 | grep -E "^e:|BUILD|FAILED"
+./gradlew assembleDebug 2>&1 | grep -E "^e:|error:|BUILD|FAILED"
 ```
-Fix all compile errors before continuing.
+Fix **all** compile errors and warnings introduced by your changes before continuing. Do not skip past a failed build.
 
-### Step 2 — Deploy
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.example.artisanx/.MainActivity
+### Step 2 — Deploy and launch
+`adb` is not on the system PATH. Always use the full path via PowerShell:
+```powershell
+$adb = "C:\Users\nkosi\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+& $adb install -r "app\build\outputs\apk\debug\app-debug.apk"
+& $adb shell am start -n com.example.artisanx/.MainActivity
 ```
+If no device is connected (`adb devices` shows empty), report this clearly and ask the user to connect one — do **not** skip this step silently.
 
-### Step 3 — Exercise the full flow
-- Test the **happy path** (valid inputs, correct role, sufficient credits).
-- Test the **other role's view** — what does the other party see after this action?
-- Test **empty states** — what shows when the list is empty?
-- Test **error states** — what shows if the backend call fails?
-- Test **edge cases** specific to the feature (duplicate bid, cancel already-completed booking, etc.).
-
-### Step 4 — Read logs
-```bash
-adb logcat -s AndroidRuntime:E System.err:W com.example.artisanx:D | head -100
+### Step 3 — Monitor logs while the app runs
+Clear the buffer, wait ~8 seconds, then dump:
+```powershell
+$adb = "C:\Users\nkosi\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+& $adb logcat -c
+Start-Sleep -Seconds 8
+& $adb logcat -d 2>&1 | Select-String -Pattern "FATAL|artisanx|Appwrite|Exception|Error|crash" | Select-Object -First 150
 ```
-Look for uncaught exceptions, Appwrite errors, permission denials.
+Specifically look for:
+- Uncaught exceptions / crashes (`FATAL EXCEPTION`)
+- Appwrite SDK errors (4xx/5xx responses, permission denials)
+- Missing navigation routes (`IllegalArgumentException`)
+- Null pointer / class cast issues at runtime
 
-### Step 5 — Ask if blocked
-If a flow can't be exercised without data (e.g. testing bid acceptance requires a posted job and a submitted bid), ask the user to:
-- Use the test accounts (`customer_test@artisanx.dev` / `artisan_test@artisanx.dev`, password `TestPass123!`).
-- Or describe what state needs to be set up.
+Report what you found — even "no errors in logs" is a useful signal that must be stated explicitly.
+
+### Step 4 — Exercise the affected flows
+Navigate to every screen touched by the feature and verify:
+- **Happy path**: valid inputs, correct role, sufficient credits.
+- **Other role's view**: what does the other party see after this action?
+- **Empty state**: what shows when the list is empty?
+- **Error state**: what shows if the backend call fails?
+- **Edge cases** specific to the feature (duplicate bid, cancel completed booking, etc.).
+
+If a flow requires specific data that isn't present (e.g. an accepted bid), ask the user to set it up using the test accounts (`customer_test@artisanx.dev` / `artisan_test@artisanx.dev`, password `TestPass123!`) rather than skipping the test.
+
+### Step 5 — Report results before moving on
+After testing, write a short summary:
+```
+✅ Build: passed
+✅ Install: success
+✅ Logs: no crashes or errors
+✅ Flows tested: [list what was navigated]
+⚠️  Known issue: [anything observed but not fixed in this session]
+```
+Do not proceed to the next feature until this summary is written.
 
 ---
 
