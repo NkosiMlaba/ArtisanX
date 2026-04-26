@@ -13,11 +13,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
@@ -47,9 +50,12 @@ class MainActivity : ComponentActivity() {
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Image(
-                                    painter = painterResource(R.drawable.artisanx_logo),
+                                    painter = painterResource(R.drawable.artisanx_logo_bg),
                                     contentDescription = "ArtisanX",
-                                    modifier = Modifier.size(120.dp)
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
                                 )
                                 Spacer(modifier = Modifier.height(24.dp))
                                 CircularProgressIndicator()
