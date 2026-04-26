@@ -3,15 +3,19 @@ package com.example.artisanx.di
 import com.example.artisanx.data.repository.AuthRepositoryImpl
 import com.example.artisanx.data.repository.BiddingRepositoryImpl
 import com.example.artisanx.data.repository.BookingRepositoryImpl
+import com.example.artisanx.data.repository.ChatRepositoryImpl
 import com.example.artisanx.data.repository.CreditsRepositoryImpl
 import com.example.artisanx.data.repository.JobRepositoryImpl
 import com.example.artisanx.data.repository.ProfileRepositoryImpl
+import com.example.artisanx.data.repository.ReviewRepositoryImpl
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BiddingRepository
 import com.example.artisanx.domain.repository.BookingRepository
+import com.example.artisanx.domain.repository.ChatRepository
 import com.example.artisanx.domain.repository.CreditsRepository
 import com.example.artisanx.domain.repository.JobRepository
 import com.example.artisanx.domain.repository.ProfileRepository
+import com.example.artisanx.domain.repository.ReviewRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -57,4 +61,16 @@ abstract class RepositoryModule {
     abstract fun bindCreditsRepository(
         creditsRepositoryImpl: CreditsRepositoryImpl
     ): CreditsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindChatRepository(
+        chatRepositoryImpl: ChatRepositoryImpl
+    ): ChatRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReviewRepository(
+        reviewRepositoryImpl: ReviewRepositoryImpl
+    ): ReviewRepository
 }

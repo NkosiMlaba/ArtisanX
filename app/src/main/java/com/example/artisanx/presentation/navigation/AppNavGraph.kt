@@ -26,8 +26,10 @@ import com.example.artisanx.presentation.artisan.*
 import com.example.artisanx.presentation.bidding.BidSubmitScreen
 import com.example.artisanx.presentation.bidding.BidsListScreen
 import com.example.artisanx.presentation.booking.BookingsScreen
+import com.example.artisanx.presentation.chat.ChatScreen
 import com.example.artisanx.presentation.common.JobDetailScreen
 import com.example.artisanx.presentation.profile.*
+import com.example.artisanx.presentation.review.ReviewScreen
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object CustomerHome : BottomNavItem(Screen.CustomerDashboard.route, "Home", Icons.Default.Home)
@@ -111,7 +113,7 @@ fun AppNavGraph(
                 CustomerProfileScreen(navController)
             }
             composable(route = Screen.CustomerBookings.route) {
-                BookingsScreen(isArtisan = false, snackbarHostState = snackbarHostState)
+                BookingsScreen(isArtisan = false, navController = navController, snackbarHostState = snackbarHostState)
             }
 
             // Artisan
@@ -125,7 +127,7 @@ fun AppNavGraph(
                 ArtisanProfileScreen(navController)
             }
             composable(route = Screen.ArtisanBookings.route) {
-                BookingsScreen(isArtisan = true, snackbarHostState = snackbarHostState)
+                BookingsScreen(isArtisan = true, navController = navController, snackbarHostState = snackbarHostState)
             }
 
             // Common
@@ -139,6 +141,16 @@ fun AppNavGraph(
             }
             composable(route = Screen.BidsList.route) {
                 BidsListScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+
+            // Chat
+            composable(route = Screen.Chat.route) {
+                ChatScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+
+            // Review
+            composable(route = Screen.Review.route) {
+                ReviewScreen(navController = navController, snackbarHostState = snackbarHostState)
             }
         }
     }

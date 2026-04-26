@@ -12,12 +12,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.example.artisanx.presentation.navigation.Screen
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingsScreen(
     isArtisan: Boolean,
+    navController: NavController,
     viewModel: BookingsViewModel = hiltViewModel(),
     snackbarHostState: SnackbarHostState
 ) {
@@ -56,7 +59,18 @@ fun BookingsScreen(
                             bookingWithJob = bookingWithJob,
                             isArtisan = isArtisan,
                             onUpdateStatus = { newStatus -> viewModel.updateStatus(bookingWithJob.booking.id, newStatus) },
-                            onMarkPaid = { viewModel.markAsPaid(bookingWithJob.booking.id) }
+                            onMarkPaid = { viewModel.markAsPaid(bookingWithJob.booking.id) },
+                            onOpenChat = {
+                                navController.navigate(Screen.Chat.createRoute(bookingWithJob.booking.id))
+                            },
+                            onLeaveReview = {
+                                navController.navigate(
+                                    Screen.Review.createRoute(
+                                        bookingWithJob.booking.id,
+                                        bookingWithJob.booking.artisanId
+                                    )
+                                )
+                            }
                         )
                     }
                 }
@@ -70,7 +84,9 @@ fun BookingCard(
     bookingWithJob: BookingWithJob,
     isArtisan: Boolean,
     onUpdateStatus: (String) -> Unit,
-    onMarkPaid: () -> Unit
+    onMarkPaid: () -> Unit,
+    onOpenChat: () -> Unit,
+    onLeaveReview: () -> Unit
 ) {
     val booking = bookingWithJob.booking
     val job = bookingWithJob.job
@@ -83,12 +99,15 @@ fun BookingCard(
                 fontWeight = FontWeight.Bold
             )
             if (job != null) {
-                Text(text = job.category, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = job.category,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Status stepper
             BookingStatusStepper(currentStatus = booking.status)
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -102,32 +121,44 @@ fun BookingCard(
                         labelColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 )
+                Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // Action buttons based on role and status
+            // Chat button — always available for active bookings
+            if (booking.status != "requested") {
+                OutlinedButton(onClick = onOpenChat, modifier = Modifier.fillMaxWidth()) {
+                    Text("Open Chat")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // Role-specific action buttons
             if (isArtisan) {
                 when (booking.status) {
-                    "requested" -> {
-                        Button(onClick = { onUpdateStatus("accepted") }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Accept Booking")
-                        }
-                    }
-                    "accepted" -> {
-                        Button(onClick = { onUpdateStatus("in_progress") }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Start Job")
-                        }
-                    }
-                    "in_progress" -> {
-                        Button(onClick = { onUpdateStatus("completed") }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Mark Complete")
-                        }
-                    }
+                    "requested" -> Button(
+                        onClick = { onUpdateStatus("accepted") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Accept Booking") }
+                    "accepted" -> Button(
+                        onClick = { onUpdateStatus("in_progress") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Start Job") }
+                    "in_progress" -> Button(
+                        onClick = { onUpdateStatus("completed") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Mark Complete") }
                 }
             } else {
                 // Customer actions
-                if (booking.status == "completed" && !booking.isPaid) {
-                    OutlinedButton(onClick = onMarkPaid, modifier = Modifier.fillMaxWidth()) {
-                        Text("Mark as Paid")
+                if (booking.status == "completed") {
+                    if (!booking.isPaid) {
+                        OutlinedButton(onClick = onMarkPaid, modifier = Modifier.fillMaxWidth()) {
+                            Text("Mark as Paid")
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    Button(onClick = onLeaveReview, modifier = Modifier.fillMaxWidth()) {
+                        Text("Leave a Review")
                     }
                 }
             }
