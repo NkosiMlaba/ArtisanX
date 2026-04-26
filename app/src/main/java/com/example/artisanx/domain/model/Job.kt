@@ -14,6 +14,7 @@ data class Job(
     val jobType: String,
     val status: String,
     val assignedArtisanId: String,
+    val photoIds: List<String>,
     val createdAt: String
 )
 
@@ -27,6 +28,7 @@ private fun Any?.toDoubleOrDefault(default: Double = 0.0): Double {
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 fun Map<String, Any>.toJob(id: String, createdAt: String): Job {
     return Job(
         id = id,
@@ -42,6 +44,7 @@ fun Map<String, Any>.toJob(id: String, createdAt: String): Job {
         jobType = this["jobType"] as? String ?: "standard",
         status = this["status"] as? String ?: "open",
         assignedArtisanId = this["assignedArtisanId"] as? String ?: "",
+        photoIds = (this["photoIds"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
         createdAt = createdAt
     )
 }

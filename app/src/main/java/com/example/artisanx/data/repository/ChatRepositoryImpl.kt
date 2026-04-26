@@ -56,6 +56,36 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun sendImageMessage(
+        bookingId: String,
+        senderId: String,
+        imageFileId: String
+    ): Resource<ChatMessage> {
+        return try {
+            val document = databases.createDocument(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_CHAT_MESSAGES,
+                documentId = ID.unique(),
+                data = mapOf(
+                    "bookingId" to bookingId,
+                    "senderId" to senderId,
+                    "message" to "",
+                    "imageFileId" to imageFileId,
+                    "createdAt" to getCurrentIso8601Date()
+                ),
+                permissions = listOf(
+                    Permission.read(Role.user(senderId)),
+                    Permission.read(Role.users())
+                )
+            )
+            val msg = document.data.toChatMessage(document.id, document.createdAt)
+            Resource.Success(msg)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message ?: "Failed to send image")
+        }
+    }
+
     override suspend fun getMessages(bookingId: String): Resource<List<ChatMessage>> {
         return try {
             val response = databases.listDocuments(

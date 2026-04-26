@@ -15,7 +15,8 @@ interface JobRepository {
         latitude: Double = 0.0,
         longitude: Double = 0.0,
         urgency: String = "standard",
-        jobType: String = "standard"
+        jobType: String = "standard",
+        photoIds: List<String> = emptyList()
     ): Resource<Job>
 
     suspend fun updateJob(

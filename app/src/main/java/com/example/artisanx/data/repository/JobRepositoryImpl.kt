@@ -34,7 +34,8 @@ class JobRepositoryImpl @Inject constructor(
         latitude: Double,
         longitude: Double,
         urgency: String,
-        jobType: String
+        jobType: String,
+        photoIds: List<String>
     ): Resource<Job> {
         return try {
             val document = databases.createDocument(
@@ -46,7 +47,7 @@ class JobRepositoryImpl @Inject constructor(
                     "title" to title,
                     "category" to category,
                     "description" to description,
-                    "photoIds" to listOf<String>(),
+                    "photoIds" to photoIds,
                     "latitude" to latitude,
                     "longitude" to longitude,
                     "address" to address,

@@ -5,5 +5,6 @@ import com.example.artisanx.util.Resource
 
 interface ChatRepository {
     suspend fun sendMessage(bookingId: String, senderId: String, message: String): Resource<ChatMessage>
+    suspend fun sendImageMessage(bookingId: String, senderId: String, imageFileId: String): Resource<ChatMessage>
     suspend fun getMessages(bookingId: String): Resource<List<ChatMessage>>
 }

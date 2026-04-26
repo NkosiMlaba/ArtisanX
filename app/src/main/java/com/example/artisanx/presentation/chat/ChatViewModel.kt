@@ -1,6 +1,7 @@
 package com.example.artisanx.presentation.chat
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
@@ -12,9 +13,11 @@ import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BookingRepository
 import com.example.artisanx.domain.repository.ChatRepository
 import com.example.artisanx.domain.repository.ProfileRepository
+import com.example.artisanx.util.AppwriteFileUtils
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.appwrite.services.Storage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,6 +32,7 @@ class ChatViewModel @Inject constructor(
     private val bookingRepository: BookingRepository,
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    private val storage: Storage,
     @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -52,6 +56,9 @@ class ChatViewModel @Inject constructor(
 
     private val _isLoading = mutableStateOf(true)
     val isLoading: State<Boolean> = _isLoading
+
+    private val _isImageUploading = mutableStateOf(false)
+    val isImageUploading: State<Boolean> = _isImageUploading
 
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
@@ -134,6 +141,24 @@ class ChatViewModel @Inject constructor(
 
     fun onInputChange(value: String) {
         _messageInput.value = value
+    }
+
+    fun sendImageMessage(uri: Uri) {
+        if (_currentUserId.value.isBlank()) return
+        _isImageUploading.value = true
+        viewModelScope.launch {
+            val fileId = AppwriteFileUtils.uploadFromUri(context, storage, uri, "chat_img")
+            if (fileId != null) {
+                when (val result = chatRepository.sendImageMessage(bookingId, _currentUserId.value, fileId)) {
+                    is Resource.Success -> refreshMessages()
+                    is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to send image"))
+                    else -> Unit
+                }
+            } else {
+                _uiEvent.emit(UiEvent.ShowSnackbar("Failed to upload image"))
+            }
+            _isImageUploading.value = false
+        }
     }
 
     fun sendMessage() {

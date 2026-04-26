@@ -221,8 +221,8 @@ Explicitly deferred in README §6 — do not implement for academic submission:
 | P2-D | Deep link from notification tap | S |
 | P2-E | Char counters on all text fields | S |
 | P2-F | Full artisan onboarding (student/independent) | ~~XL~~ ✅ |
-| P2-G | Photo upload in chat | M |
-| P2-H | Job photo upload | M |
+| P2-G | Photo upload in chat | ~~M~~ ✅ |
+| P2-H | Job photo upload | ~~M~~ ✅ |
 | P2-I | Artisan service area map in profile | S |
 | P2-J | Map view toggle on job browse | M |
 | P3 | UX polish (skeletons, dialogs, offline, 401) | L |

@@ -1,5 +1,7 @@
 package com.example.artisanx.presentation.chat
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,17 +13,22 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.artisanx.domain.model.ChatMessage
+import com.example.artisanx.util.AppwriteFileUtils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -40,10 +47,15 @@ fun ChatScreen(
     val messageInput = viewModel.messageInput.value
     val isSending = viewModel.isSending.value
     val isLoading = viewModel.isLoading.value
+    val isImageUploading = viewModel.isImageUploading.value
     val currentUserId = viewModel.currentUserId.value
     val otherPartyName = viewModel.otherPartyName.value
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { viewModel.sendImageMessage(it) } }
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -67,7 +79,12 @@ fun ChatScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -76,9 +93,28 @@ fun ChatScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Attach image button
+                    IconButton(
+                        onClick = { imagePicker.launch("image/*") },
+                        enabled = !isImageUploading && !isSending
+                    ) {
+                        if (isImageUploading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.AttachFile,
+                                contentDescription = "Attach image",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
                     OutlinedTextField(
                         value = messageInput,
                         onValueChange = viewModel::onInputChange,
@@ -89,13 +125,23 @@ fun ChatScreen(
                         keyboardActions = KeyboardActions(onSend = { viewModel.sendMessage() }),
                         shape = RoundedCornerShape(24.dp),
                         supportingText = if (messageInput.length > 1800) {
-                            { Text("${messageInput.length}/2000", color = if (messageInput.length >= 2000) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline) }
+                            {
+                                Text(
+                                    "${messageInput.length}/2000",
+                                    color = if (messageInput.length >= 2000)
+                                        MaterialTheme.colorScheme.error
+                                    else
+                                        MaterialTheme.colorScheme.outline
+                                )
+                            }
                         } else null
                     )
+
                     Spacer(modifier = Modifier.width(8.dp))
+
                     FilledIconButton(
                         onClick = { viewModel.sendMessage() },
-                        enabled = messageInput.isNotBlank() && !isSending
+                        enabled = messageInput.isNotBlank() && !isSending && !isImageUploading
                     ) {
                         if (isSending) {
                             CircularProgressIndicator(
@@ -128,10 +174,7 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(messages) { msg ->
-                        MessageBubble(
-                            message = msg,
-                            isOwn = msg.senderId == currentUserId
-                        )
+                        MessageBubble(message = msg, isOwn = msg.senderId == currentUserId)
                     }
                 }
             }
@@ -154,13 +197,24 @@ fun MessageBubble(message: ChatMessage, isOwn: Boolean) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment
     ) {
-        Box(
-            modifier = Modifier
-                .widthIn(max = 280.dp)
-                .background(color = bubbleColor, shape = shape)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text(text = message.message, color = textColor, style = MaterialTheme.typography.bodyMedium)
+        if (message.imageFileId.isNotBlank()) {
+            AsyncImage(
+                model = AppwriteFileUtils.fileViewUrl(message.imageFileId),
+                contentDescription = "Chat image",
+                modifier = Modifier
+                    .widthIn(max = 240.dp)
+                    .clip(shape),
+                contentScale = ContentScale.FillWidth
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .widthIn(max = 280.dp)
+                    .background(color = bubbleColor, shape = shape)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(text = message.message, color = textColor, style = MaterialTheme.typography.bodyMedium)
+            }
         }
         Text(
             text = formatChatTimestamp(message.createdAt),

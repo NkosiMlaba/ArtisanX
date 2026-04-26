@@ -10,17 +10,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.CreditsRepository
 import com.example.artisanx.domain.repository.ProfileRepository
-import com.example.artisanx.util.Constants
+import com.example.artisanx.util.AppwriteFileUtils
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.appwrite.ID
-import io.appwrite.models.InputFile
 import io.appwrite.services.Storage
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
 
 enum class OnboardingStep { BASIC, IDENTITY, PORTFOLIO }
@@ -167,31 +164,8 @@ class ArtisanOnboardingViewModel @Inject constructor(
         if (index < _uploadedWorkPhotoIds.size) _uploadedWorkPhotoIds.removeAt(index)
     }
 
-    private suspend fun uploadFile(uri: Uri, prefix: String): String? {
-        return try {
-            val cacheFile = copyUriToCache(uri, prefix)
-            val result = storage.createFile(
-                bucketId = Constants.BUCKET_ARTISANSX_FILES,
-                fileId = ID.unique(),
-                file = InputFile.fromPath(cacheFile.absolutePath)
-            )
-            cacheFile.delete()
-            result.id
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private fun copyUriToCache(uri: Uri, prefix: String): File {
-        val ext = context.contentResolver.getType(uri)
-            ?.substringAfterLast("/") ?: "jpg"
-        val cacheFile = File(context.cacheDir, "${prefix}_${System.currentTimeMillis()}.$ext")
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            cacheFile.outputStream().use { output -> input.copyTo(output) }
-        }
-        return cacheFile
-    }
+    private suspend fun uploadFile(uri: Uri, prefix: String): String? =
+        AppwriteFileUtils.uploadFromUri(context, storage, uri, prefix)
 
     fun nextStep() {
         when (_currentStep.value) {

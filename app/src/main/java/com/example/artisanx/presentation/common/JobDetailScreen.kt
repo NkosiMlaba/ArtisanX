@@ -19,9 +19,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.artisanx.util.AppwriteFileUtils
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -175,6 +179,25 @@ fun JobDetailScreen(
                     }
 
                     Text(text = "Job Type: ${job.jobType.replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.bodyMedium)
+
+                    // Job photos
+                    if (job.photoIds.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Photos", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            job.photoIds.forEach { fileId ->
+                                AsyncImage(
+                                    model = AppwriteFileUtils.fileViewUrl(fileId),
+                                    contentDescription = "Job photo",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(MaterialTheme.shapes.small),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider()
