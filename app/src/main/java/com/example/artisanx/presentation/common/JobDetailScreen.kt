@@ -13,8 +13,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -35,6 +37,8 @@ fun JobDetailScreen(
     val isOwnJob = viewModel.isOwnJob.value
     val hasAlreadyBid = viewModel.hasAlreadyBid.value
     val bidCount = viewModel.bidCount.value
+    val suggestedArtisans = viewModel.suggestedArtisans.value
+    val isMatchLoading = viewModel.isMatchLoading.value
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -160,6 +164,80 @@ fun JobDetailScreen(
                                     label = { Text("Job Completed") },
                                     modifier = Modifier.fillMaxWidth()
                                 )
+                            }
+                        }
+                    }
+
+                    // AI Suggested Artisans — only shown to job owner on open jobs
+                    if (isOwnJob && job.status == "open") {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "✨ Suggested Artisans",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Powered by AI",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (isMatchLoading) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Finding the best artisans for you...", style = MaterialTheme.typography.bodySmall)
+                            }
+                        } else if (suggestedArtisans.isEmpty()) {
+                            Text(
+                                text = "No artisans in this category yet.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            suggestedArtisans.forEach { artisan ->
+                                ElevatedCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(artisan.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                                Text(artisan.trade, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(artisan.serviceArea, style = MaterialTheme.typography.bodySmall)
+                                            }
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                if (artisan.reviewCount > 0) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                                        Text(String.format("%.1f", artisan.rating), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                                        Text(" (${artisan.reviewCount})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                                Text(artisan.badge, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                        if (artisan.explanation.isNotBlank()) {
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = artisan.explanation,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

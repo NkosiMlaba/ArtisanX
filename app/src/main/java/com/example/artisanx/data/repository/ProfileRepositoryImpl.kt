@@ -1,5 +1,6 @@
 package com.example.artisanx.data.repository
 
+import com.example.artisanx.domain.repository.ArtisanSummary
 import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
@@ -208,6 +209,40 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error(e.message ?: "Failed to update artisan profile")
+        }
+    }
+
+    override suspend fun getArtisansByCategory(category: String): Resource<List<ArtisanSummary>> {
+        return try {
+            val response = databases.listDocuments(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_ARTISAN_PROFILES,
+                queries = listOf(
+                    Query.equal("tradeCategory", category),
+                    Query.limit(20)
+                )
+            )
+            val summaries = response.documents.map { doc ->
+                val data = doc.data
+                ArtisanSummary(
+                    artisanId = data["userId"] as? String ?: doc.id,
+                    name = data["fullName"] as? String ?: "Artisan",
+                    trade = data["tradeCategory"] as? String ?: "",
+                    skills = data["skills"] as? String ?: "",
+                    serviceArea = data["serviceArea"] as? String ?: "",
+                    rating = when (val r = data["avgRating"]) {
+                        is Double -> r; is Float -> r.toDouble(); is Int -> r.toDouble(); else -> 0.0
+                    },
+                    reviewCount = when (val c = data["reviewCount"]) {
+                        is Int -> c; is Long -> c.toInt(); else -> 0
+                    },
+                    badge = data["badge"] as? String ?: ""
+                )
+            }
+            Resource.Success(summaries)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.message ?: "Failed to fetch artisans")
         }
     }
 }

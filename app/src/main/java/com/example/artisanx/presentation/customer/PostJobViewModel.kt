@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.artisanx.domain.repository.AiRepository
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.JobRepository
 import com.example.artisanx.util.Resource
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PostJobViewModel @Inject constructor(
     private val jobRepository: JobRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val aiRepository: AiRepository
 ) : ViewModel() {
 
     private val _title = mutableStateOf("")
@@ -37,6 +39,13 @@ class PostJobViewModel @Inject constructor(
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
 
+    // AI state
+    private val _isAiLoading = mutableStateOf(false)
+    val isAiLoading: State<Boolean> = _isAiLoading
+
+    private val _aiSuggestion = mutableStateOf<String?>(null)
+    val aiSuggestion: State<String?> = _aiSuggestion
+
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
@@ -45,6 +54,34 @@ class PostJobViewModel @Inject constructor(
     fun onCategoryChange(value: String) { _category.value = value }
     fun onAddressChange(value: String) { _address.value = value }
     fun onBudgetChange(value: String) { _budget.value = value }
+
+    fun generateAiDescription() {
+        if (_description.value.isBlank()) {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowSnackbar("Type a rough description first")) }
+            return
+        }
+        _isAiLoading.value = true
+        viewModelScope.launch {
+            when (val result = aiRepository.generateJobDescription(
+                category = _category.value.ifBlank { "General" },
+                roughDescription = _description.value
+            )) {
+                is Resource.Success -> _aiSuggestion.value = result.data
+                is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "AI unavailable"))
+                else -> Unit
+            }
+            _isAiLoading.value = false
+        }
+    }
+
+    fun acceptAiSuggestion() {
+        _aiSuggestion.value?.let { _description.value = it }
+        _aiSuggestion.value = null
+    }
+
+    fun dismissAiSuggestion() {
+        _aiSuggestion.value = null
+    }
 
     fun submitJob() {
         val budgetVal = _budget.value.toDoubleOrNull()
@@ -73,9 +110,7 @@ class PostJobViewModel @Inject constructor(
                         _uiEvent.emit(UiEvent.ShowSnackbar("Job posted successfully!"))
                         _uiEvent.emit(UiEvent.NavigateBack)
                     }
-                    is Resource.Error -> {
-                        _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to post job"))
-                    }
+                    is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to post job"))
                     else -> Unit
                 }
             } else {

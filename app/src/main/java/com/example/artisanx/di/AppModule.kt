@@ -1,7 +1,10 @@
 package com.example.artisanx.di
 
 import android.content.Context
-
+import com.example.artisanx.data.remote.GroqApiService
+import com.example.artisanx.data.remote.OpenRouterApiService
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,5 +44,25 @@ object AppModule {
     @Singleton
     fun provideAppwriteStorage(client: Client): Storage {
         return Storage(client)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGroqApiService(): GroqApiService {
+        return Retrofit.Builder()
+            .baseUrl("https://api.groq.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(GroqApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOpenRouterApiService(): OpenRouterApiService {
+        return Retrofit.Builder()
+            .baseUrl("https://openrouter.ai/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(OpenRouterApiService::class.java)
     }
 }

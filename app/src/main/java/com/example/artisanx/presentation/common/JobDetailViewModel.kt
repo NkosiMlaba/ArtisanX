@@ -7,9 +7,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.artisanx.data.local.DataStoreManager
 import com.example.artisanx.domain.model.Job
+import com.example.artisanx.domain.repository.AiRepository
+import com.example.artisanx.domain.repository.ArtisanMatch
+import com.example.artisanx.domain.repository.ArtisanSummary
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BiddingRepository
 import com.example.artisanx.domain.repository.JobRepository
+import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,6 +27,8 @@ class JobDetailViewModel @Inject constructor(
     private val jobRepository: JobRepository,
     private val authRepository: AuthRepository,
     private val biddingRepository: BiddingRepository,
+    private val profileRepository: ProfileRepository,
+    private val aiRepository: AiRepository,
     private val dataStoreManager: DataStoreManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -34,6 +40,12 @@ class JobDetailViewModel @Inject constructor(
 
     private val _isLoading = mutableStateOf(true)
     val isLoading: State<Boolean> = _isLoading
+
+    private val _suggestedArtisans = mutableStateOf<List<ArtisanMatch>>(emptyList())
+    val suggestedArtisans: State<List<ArtisanMatch>> = _suggestedArtisans
+
+    private val _isMatchLoading = mutableStateOf(false)
+    val isMatchLoading: State<Boolean> = _isMatchLoading
 
     private val _error = mutableStateOf<String?>(null)
     val error: State<String?> = _error
@@ -101,6 +113,39 @@ class JobDetailViewModel @Inject constructor(
             }
 
             _isLoading.value = false
+
+            // Load AI artisan matches for job owner on open jobs (runs after main load)
+            val job = _job.value
+            if (_isOwnJob.value && job?.status == "open") {
+                loadArtisanMatches(job)
+            }
+        }
+    }
+
+    private fun loadArtisanMatches(job: Job) {
+        _isMatchLoading.value = true
+        viewModelScope.launch {
+            try {
+                // Fetch artisans in the same trade category
+                val artisanDocsRes = profileRepository.getArtisansByCategory(job.category)
+                if (artisanDocsRes is Resource.Success) {
+                    val artisanSummaries = artisanDocsRes.data ?: emptyList()
+                    if (artisanSummaries.isNotEmpty()) {
+                        when (val matchRes = aiRepository.matchArtisans(
+                            jobTitle = job.title,
+                            jobDescription = job.description,
+                            category = job.category,
+                            artisans = artisanSummaries
+                        )) {
+                            is Resource.Success -> _suggestedArtisans.value = matchRes.data ?: emptyList()
+                            else -> Unit
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            _isMatchLoading.value = false
         }
     }
 

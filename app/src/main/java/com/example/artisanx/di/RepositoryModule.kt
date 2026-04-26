@@ -1,5 +1,6 @@
 package com.example.artisanx.di
 
+import com.example.artisanx.data.repository.AiRepositoryImpl
 import com.example.artisanx.data.repository.AuthRepositoryImpl
 import com.example.artisanx.data.repository.BiddingRepositoryImpl
 import com.example.artisanx.data.repository.BookingRepositoryImpl
@@ -8,6 +9,7 @@ import com.example.artisanx.data.repository.CreditsRepositoryImpl
 import com.example.artisanx.data.repository.JobRepositoryImpl
 import com.example.artisanx.data.repository.ProfileRepositoryImpl
 import com.example.artisanx.data.repository.ReviewRepositoryImpl
+import com.example.artisanx.domain.repository.AiRepository
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BiddingRepository
 import com.example.artisanx.domain.repository.BookingRepository
@@ -73,4 +75,10 @@ abstract class RepositoryModule {
     abstract fun bindReviewRepository(
         reviewRepositoryImpl: ReviewRepositoryImpl
     ): ReviewRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAiRepository(
+        aiRepositoryImpl: AiRepositoryImpl
+    ): AiRepository
 }

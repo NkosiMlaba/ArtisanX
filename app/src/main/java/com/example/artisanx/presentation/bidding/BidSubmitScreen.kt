@@ -28,6 +28,8 @@ fun BidSubmitScreen(
     val priceOffer = viewModel.priceOffer.value
     val message = viewModel.message.value
     val estimatedHours = viewModel.estimatedHours.value
+    val isAiLoading = viewModel.isAiLoading.value
+    val aiSuggestion = viewModel.aiSuggestion.value
     val isLoading = viewModel.isLoading.value
     val credits = viewModel.creditBalance.value
 
@@ -124,7 +126,23 @@ fun BidSubmitScreen(
                 maxLines = 5,
                 supportingText = { Text("${message.length}/500") }
             )
-            Spacer(modifier = Modifier.height(24.dp))
+
+            // AI Bid Helper button
+            Spacer(modifier = Modifier.height(8.dp))
+            FilledTonalButton(
+                onClick = { viewModel.getAiSuggestion() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isAiLoading && !isLoading
+            ) {
+                if (isAiLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Getting AI suggestion...")
+                } else {
+                    Text("✨ Get AI price & message suggestion")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = { viewModel.submitBid() },
@@ -147,5 +165,42 @@ fun BidSubmitScreen(
                 )
             }
         }
+    }
+
+    // AI suggestion dialog
+    if (aiSuggestion != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissAiSuggestion() },
+            title = { Text("✨ AI Bid Suggestion") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Powered by AI — review before applying:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Suggested price: R${aiSuggestion.minPrice.toInt()} – R${aiSuggestion.maxPrice.toInt()}",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+                    }
+                    Text(text = "Message template:", style = MaterialTheme.typography.labelMedium)
+                    Text(text = aiSuggestion.messageTemplate, style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.acceptAiSuggestion() }) {
+                    Text("Use This")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissAiSuggestion() }) {
+                    Text("Dismiss")
+                }
+            }
+        )
     }
 }

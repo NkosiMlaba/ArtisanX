@@ -6,10 +6,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.artisanx.domain.model.Job
+import com.example.artisanx.domain.repository.AiRepository
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BiddingRepository
+import com.example.artisanx.domain.repository.BidSuggestion
 import com.example.artisanx.domain.repository.CreditsRepository
 import com.example.artisanx.domain.repository.JobRepository
+import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,6 +26,8 @@ class BidSubmitViewModel @Inject constructor(
     private val jobRepository: JobRepository,
     private val creditsRepository: CreditsRepository,
     private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository,
+    private val aiRepository: AiRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -46,6 +51,15 @@ class BidSubmitViewModel @Inject constructor(
     private val _creditBalance = mutableStateOf(0)
     val creditBalance: State<Int> = _creditBalance
 
+    // AI state
+    private val _isAiLoading = mutableStateOf(false)
+    val isAiLoading: State<Boolean> = _isAiLoading
+
+    private val _aiSuggestion = mutableStateOf<BidSuggestion?>(null)
+    val aiSuggestion: State<BidSuggestion?> = _aiSuggestion
+
+    private val _artisanSkills = mutableStateOf("")
+
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
@@ -55,23 +69,59 @@ class BidSubmitViewModel @Inject constructor(
 
     private fun loadJobAndCredits() {
         viewModelScope.launch {
-            // Load job details
             when (val result = jobRepository.getJobById(jobId)) {
                 is Resource.Success -> _job.value = result.data
                 is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to load job"))
                 else -> Unit
             }
 
-            // Load credit balance
             val userRes = authRepository.getCurrentUser()
-            if (userRes is Resource.Success) {
-                val userId = userRes.data?.id ?: return@launch
+            if (userRes is Resource.Success && userRes.data != null) {
+                val userId = userRes.data.id
                 when (val creditsRes = creditsRepository.getBalance(userId)) {
                     is Resource.Success -> _creditBalance.value = creditsRes.data ?: 0
                     else -> Unit
                 }
+                // Load artisan's skills for AI context
+                val profileRes = profileRepository.getArtisanProfile(userId)
+                if (profileRes is Resource.Success) {
+                    _artisanSkills.value = profileRes.data?.data?.get("skills") as? String ?: ""
+                }
             }
         }
+    }
+
+    fun getAiSuggestion() {
+        val job = _job.value ?: run {
+            viewModelScope.launch { _uiEvent.emit(UiEvent.ShowSnackbar("Job not loaded yet")) }
+            return
+        }
+        _isAiLoading.value = true
+        viewModelScope.launch {
+            when (val result = aiRepository.getBidSuggestion(
+                jobTitle = job.title,
+                jobDescription = job.description,
+                category = job.category,
+                budget = job.budget,
+                artisanSkills = _artisanSkills.value
+            )) {
+                is Resource.Success -> _aiSuggestion.value = result.data
+                is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "AI unavailable"))
+                else -> Unit
+            }
+            _isAiLoading.value = false
+        }
+    }
+
+    fun acceptAiSuggestion() {
+        val suggestion = _aiSuggestion.value ?: return
+        _priceOffer.value = suggestion.minPrice.toInt().toString()
+        _message.value = suggestion.messageTemplate
+        _aiSuggestion.value = null
+    }
+
+    fun dismissAiSuggestion() {
+        _aiSuggestion.value = null
     }
 
     fun onPriceOfferChange(value: String) { _priceOffer.value = value }
