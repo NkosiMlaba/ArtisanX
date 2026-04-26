@@ -4,7 +4,9 @@ import com.example.artisanx.domain.repository.CreditsRepository
 import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
 import io.appwrite.ID
+import io.appwrite.Permission
 import io.appwrite.Query
+import io.appwrite.Role
 import io.appwrite.services.Databases
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -65,6 +67,10 @@ class CreditsRepositoryImpl @Inject constructor(
                         "artisanId" to artisanId,
                         "balance" to initialBalance,
                         "lastUpdated" to getCurrentIso8601Date()
+                    ),
+                    permissions = listOf(
+                        Permission.read(Role.user(artisanId)),
+                        Permission.update(Role.user(artisanId))
                     )
                 )
             }
