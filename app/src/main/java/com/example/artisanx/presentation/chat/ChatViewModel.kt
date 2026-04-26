@@ -14,15 +14,14 @@ import com.example.artisanx.domain.repository.BookingRepository
 import com.example.artisanx.domain.repository.ChatRepository
 import com.example.artisanx.domain.repository.ProfileRepository
 import com.example.artisanx.util.AppwriteFileUtils
+import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.appwrite.services.Realtime
 import io.appwrite.services.Storage
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,6 +32,7 @@ class ChatViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
     private val storage: Storage,
+    private val realtime: Realtime,
     @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -63,11 +63,11 @@ class ChatViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
-    private var pollJob: Job? = null
+    private var realtimeSubscription: java.io.Closeable? = null
 
     init {
         loadUserAndContext()
-        startPolling()
+        subscribeToRealtime()
     }
 
     private fun loadUserAndContext() {
@@ -104,11 +104,14 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun startPolling() {
-        pollJob = viewModelScope.launch {
-            while (isActive) {
-                delay(5_000)
-                refreshMessages()
+    private fun subscribeToRealtime() {
+        val channel = "databases.${Constants.DATABASE_ID}.collections.${Constants.COLLECTION_CHAT_MESSAGES}.documents"
+        realtimeSubscription = realtime.subscribe(channel) { event ->
+            @Suppress("UNCHECKED_CAST")
+            val payload = event.payload as? Map<*, *>
+            val msgBookingId = payload?.get("bookingId") as? String
+            if (msgBookingId == bookingId) {
+                viewModelScope.launch { refreshMessages() }
             }
         }
     }
@@ -187,7 +190,7 @@ class ChatViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        pollJob?.cancel()
+        realtimeSubscription?.close()
     }
 
     sealed class UiEvent {

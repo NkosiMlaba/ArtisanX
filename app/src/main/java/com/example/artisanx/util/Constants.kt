@@ -15,6 +15,9 @@ object Constants {
     
     // Buckets
     const val BUCKET_ARTISANSX_FILES = "artisansx_files"
+
+    // Appwrite Functions
+    const val FUNCTION_AI_PROXY = "ai-proxy"
     
     // Preferences
     const val PREFERENCES_NAME = "artisanx_preferences"

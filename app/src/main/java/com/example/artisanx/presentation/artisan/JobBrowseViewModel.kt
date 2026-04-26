@@ -47,6 +47,9 @@ class JobBrowseViewModel @Inject constructor(
     private val _selectedSort = mutableStateOf(JobSortOption.NEWEST)
     val selectedSort: State<JobSortOption> = _selectedSort
 
+    private val _searchQuery = mutableStateOf("")
+    val searchQuery: State<String> = _searchQuery
+
     init {
         loadArtisanLocation()
         loadJobs()
@@ -99,11 +102,23 @@ class JobBrowseViewModel @Inject constructor(
         applySort()
     }
 
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+        applySort()
+    }
+
     private fun applySort() {
+        val q = _searchQuery.value.trim().lowercase()
+        val source = if (q.isBlank()) _allJobs.value else _allJobs.value.filter { job ->
+            job.title.lowercase().contains(q) ||
+            job.description.lowercase().contains(q) ||
+            job.category.lowercase().contains(q) ||
+            job.address.lowercase().contains(q)
+        }
         _jobs.value = when (_selectedSort.value) {
-            JobSortOption.NEWEST -> _allJobs.value.sortedByDescending { it.createdAt }
-            JobSortOption.BUDGET_HIGH -> _allJobs.value.sortedByDescending { it.budget }
-            JobSortOption.URGENT_FIRST -> _allJobs.value.sortedWith(
+            JobSortOption.NEWEST -> source.sortedByDescending { it.createdAt }
+            JobSortOption.BUDGET_HIGH -> source.sortedByDescending { it.budget }
+            JobSortOption.URGENT_FIRST -> source.sortedWith(
                 compareByDescending<Job> { it.urgency == "urgent" }.thenByDescending { it.createdAt }
             )
         }

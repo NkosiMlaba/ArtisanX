@@ -13,6 +13,8 @@ import dagger.hilt.components.SingletonComponent
 import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Databases
+import io.appwrite.services.Functions
+import io.appwrite.services.Realtime
 import io.appwrite.services.Storage
 import javax.inject.Singleton
 
@@ -44,6 +46,18 @@ object AppModule {
     @Singleton
     fun provideAppwriteStorage(client: Client): Storage {
         return Storage(client)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppwriteRealtime(client: Client): Realtime {
+        return Realtime(client)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppwriteFunctions(client: Client): Functions {
+        return Functions(client)
     }
 
     @Provides
