@@ -3,7 +3,7 @@ package com.example.artisanx.presentation.auth
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -74,7 +74,7 @@ fun RegisterScreen(
                     contentDescription = "ArtisanX Logo",
                     modifier = Modifier
                         .size(120.dp)
-                        .clip(CircleShape),
+                        .clip(RoundedCornerShape(percent = 30)),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.height(16.dp))
