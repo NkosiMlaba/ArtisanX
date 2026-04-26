@@ -6,11 +6,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -31,16 +31,49 @@ fun JobBrowseScreen(
     val isLoading = viewModel.isLoading.value
     val error = viewModel.error.value
     val selectedCategory = viewModel.selectedCategory.value
+    val selectedSort = viewModel.selectedSort.value
 
-    val categories = listOf("All", "Plumbing", "Electrical", "Cleaning", "Carpentry", "Painting")
+    var sortMenuExpanded by remember { mutableStateOf(false) }
+
+    val categories = listOf("All", "Plumbing", "Electrical", "Cleaning", "Carpentry", "Painting", "Tiling", "Roofing", "General", "Other")
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Browse Open Jobs") })
+            TopAppBar(
+                title = { Text("Browse Open Jobs") },
+                actions = {
+                    Box {
+                        TextButton(
+                            onClick = { sortMenuExpanded = true }
+                        ) {
+                            Text(selectedSort.label, style = MaterialTheme.typography.labelMedium)
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort")
+                        }
+                        DropdownMenu(
+                            expanded = sortMenuExpanded,
+                            onDismissRequest = { sortMenuExpanded = false }
+                        ) {
+                            JobSortOption.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label) },
+                                    onClick = {
+                                        viewModel.setSortOption(option)
+                                        sortMenuExpanded = false
+                                    },
+                                    trailingIcon = {
+                                        if (option == selectedSort) {
+                                            RadioButton(selected = true, onClick = null)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            )
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Filter Row
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -104,13 +137,28 @@ fun JobItemBrowse(job: Job, onClick: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
-                SuggestionChip(
-                    onClick = {},
-                    label = { Text("R${job.budget.toInt()}", style = MaterialTheme.typography.labelMedium) }
-                )
+                if (job.budget > 0) {
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text("R${job.budget.toInt()}", style = MaterialTheme.typography.labelMedium) }
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(text = job.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = job.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                if (job.urgency == "urgent") {
+                    Text(
+                        text = "⚡ Urgent",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
             if (job.address.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -129,14 +177,6 @@ fun JobItemBrowse(job: Job, onClick: () -> Unit) {
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-            if (job.urgency == "urgent") {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "⚡ Urgent",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error
-                )
             }
         }
     }

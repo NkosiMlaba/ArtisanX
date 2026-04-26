@@ -132,17 +132,24 @@ class BookingRepositoryImpl @Inject constructor(
                 ArtisansXFirebaseService.showLocalNotification(context, notifTitle, notifBody)
             }
 
-            // When booking completes, cascade to update job status too
-            if (status == "completed" && booking.jobId.isNotBlank()) {
+            // Cascade job status changes
+            val jobStatusUpdate = when (status) {
+                "completed" -> "completed"
+                "cancelled" -> "open"
+                else -> null
+            }
+            if (jobStatusUpdate != null && booking.jobId.isNotBlank()) {
                 try {
+                    val jobData = mutableMapOf<String, Any?>("status" to jobStatusUpdate)
+                    if (status == "cancelled") jobData["assignedArtisanId"] = null
                     databases.updateDocument(
                         databaseId = Constants.DATABASE_ID,
                         collectionId = Constants.COLLECTION_JOBS,
                         documentId = booking.jobId,
-                        data = mapOf("status" to "completed")
+                        data = jobData
                     )
                 } catch (e: Exception) {
-                    e.printStackTrace() // Non-fatal: log but don't fail the booking update
+                    e.printStackTrace()
                 }
             }
 

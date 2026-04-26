@@ -7,6 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -88,6 +92,25 @@ fun BookingCard(
     onOpenChat: () -> Unit,
     onLeaveReview: () -> Unit
 ) {
+    var showCancelDialog by remember { mutableStateOf(false) }
+
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancel Booking") },
+            text = { Text("Are you sure you want to cancel this booking? The job will be re-opened for new bids.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showCancelDialog = false
+                    onUpdateStatus("cancelled")
+                }) { Text("Yes, Cancel", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) { Text("Keep Booking") }
+            }
+        )
+    }
+
     val booking = bookingWithJob.booking
     val job = bookingWithJob.job
     val otherPartyName = bookingWithJob.otherPartyName
@@ -147,16 +170,38 @@ fun BookingCard(
             }
 
             // Role-specific action buttons
-            if (isArtisan) {
+            if (booking.status == "cancelled") {
+                Text(
+                    text = "Booking cancelled",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            } else if (isArtisan) {
                 when (booking.status) {
-                    "requested" -> Button(
-                        onClick = { onUpdateStatus("accepted") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Accept Booking") }
-                    "accepted" -> Button(
-                        onClick = { onUpdateStatus("in_progress") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Start Job") }
+                    "requested" -> {
+                        Button(
+                            onClick = { onUpdateStatus("accepted") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Accept Booking") }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { showCancelDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) { Text("Decline") }
+                    }
+                    "accepted" -> {
+                        Button(
+                            onClick = { onUpdateStatus("in_progress") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Start Job") }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { showCancelDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) { Text("Cancel Booking") }
+                    }
                     "in_progress" -> Button(
                         onClick = { onUpdateStatus("completed") },
                         modifier = Modifier.fillMaxWidth()
@@ -164,6 +209,15 @@ fun BookingCard(
                 }
             } else {
                 // Customer actions
+                if (booking.status in listOf("requested", "accepted")) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedButton(
+                        onClick = { showCancelDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) { Text("Cancel Booking") }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 if (booking.status == "completed") {
                     if (!booking.isPaid) {
                         OutlinedButton(onClick = onMarkPaid, modifier = Modifier.fillMaxWidth()) {
@@ -191,6 +245,8 @@ fun BookingCard(
 
 @Composable
 fun BookingStatusStepper(currentStatus: String) {
+    if (currentStatus == "cancelled") return
+
     val steps = listOf("requested", "accepted", "in_progress", "completed")
     val currentIndex = steps.indexOf(currentStatus).coerceAtLeast(0)
 

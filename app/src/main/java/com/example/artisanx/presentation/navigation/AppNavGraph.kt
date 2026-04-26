@@ -2,6 +2,7 @@ package com.example.artisanx.presentation.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -26,6 +27,7 @@ import com.example.artisanx.presentation.artisan.*
 import com.example.artisanx.presentation.bidding.BidSubmitScreen
 import com.example.artisanx.presentation.bidding.BidsListScreen
 import com.example.artisanx.presentation.booking.BookingsScreen
+import com.example.artisanx.presentation.chat.ChatListScreen
 import com.example.artisanx.presentation.chat.ChatScreen
 import com.example.artisanx.presentation.common.JobDetailScreen
 import com.example.artisanx.presentation.credits.BuyCreditsScreen
@@ -34,11 +36,13 @@ import com.example.artisanx.presentation.review.ReviewScreen
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object CustomerHome : BottomNavItem(Screen.CustomerDashboard.route, "Home", Icons.Default.Home)
+    object CustomerMessages : BottomNavItem(Screen.CustomerChatList.route, "Messages", Icons.AutoMirrored.Filled.Message)
     object CustomerBookings : BottomNavItem(Screen.CustomerBookings.route, "Bookings", Icons.Default.DateRange)
     object CustomerProfile : BottomNavItem(Screen.CustomerProfile.route, "Profile", Icons.Default.Person)
 
     object ArtisanHome : BottomNavItem(Screen.ArtisanDashboard.route, "Home", Icons.Default.Home)
     object ArtisanBrowse : BottomNavItem(Screen.JobBrowse.route, "Jobs", Icons.Default.Search)
+    object ArtisanMessages : BottomNavItem(Screen.ArtisanChatList.route, "Messages", Icons.AutoMirrored.Filled.Message)
     object ArtisanBookings : BottomNavItem(Screen.ArtisanBookings.route, "Bookings", Icons.Default.DateRange)
     object ArtisanProfile : BottomNavItem(Screen.ArtisanProfile.route, "Profile", Icons.Default.Person)
 }
@@ -53,7 +57,8 @@ fun AppNavGraph(
     val currentDestination = navBackStackEntry?.destination
 
     val isCustomerFlow = currentDestination?.route?.startsWith("customer") == true
-    val isArtisanFlow = currentDestination?.route?.startsWith("artisan") == true || currentDestination?.route == Screen.JobBrowse.route
+    val isArtisanFlow = currentDestination?.route?.startsWith("artisan") == true ||
+            currentDestination?.route == Screen.JobBrowse.route
 
     val showBottomBar = isCustomerFlow || isArtisanFlow
 
@@ -62,9 +67,20 @@ fun AppNavGraph(
             if (showBottomBar) {
                 NavigationBar {
                     val items = if (isCustomerFlow) {
-                        listOf(BottomNavItem.CustomerHome, BottomNavItem.CustomerBookings, BottomNavItem.CustomerProfile)
+                        listOf(
+                            BottomNavItem.CustomerHome,
+                            BottomNavItem.CustomerMessages,
+                            BottomNavItem.CustomerBookings,
+                            BottomNavItem.CustomerProfile
+                        )
                     } else {
-                        listOf(BottomNavItem.ArtisanHome, BottomNavItem.ArtisanBrowse, BottomNavItem.ArtisanBookings, BottomNavItem.ArtisanProfile)
+                        listOf(
+                            BottomNavItem.ArtisanHome,
+                            BottomNavItem.ArtisanBrowse,
+                            BottomNavItem.ArtisanMessages,
+                            BottomNavItem.ArtisanBookings,
+                            BottomNavItem.ArtisanProfile
+                        )
                     }
                     items.forEach { item ->
                         NavigationBarItem(
@@ -142,6 +158,14 @@ fun AppNavGraph(
             }
             composable(route = Screen.BidsList.route) {
                 BidsListScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+
+            // Chat list
+            composable(route = Screen.CustomerChatList.route) {
+                ChatListScreen(navController = navController)
+            }
+            composable(route = Screen.ArtisanChatList.route) {
+                ChatListScreen(navController = navController)
             }
 
             // Chat

@@ -43,4 +43,8 @@ sealed class Screen(val route: String) {
 
     // Credits
     object BuyCredits : Screen("buy_credits")
+
+    // Chat list (role-prefixed to keep bottom nav detection consistent)
+    object CustomerChatList : Screen("customer_chat_list")
+    object ArtisanChatList : Screen("artisan_chat_list")
 }
