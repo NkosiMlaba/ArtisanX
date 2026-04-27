@@ -1,14 +1,20 @@
 import { Groq } from "groq-sdk";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? "";
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 
 export default async ({ req, res, log, error }) => {
-  let body;
+  let body = {};
   try {
-    body = JSON.parse(req.body ?? "{}");
+    if (req.query?.d) {
+      body = JSON.parse(decodeURIComponent(req.query.d));
+    } else if (typeof req.body === "object" && req.body !== null) {
+      body = req.body;
+    } else if (typeof req.body === "string" && req.body.trim().startsWith("{")) {
+      body = JSON.parse(req.body);
+    }
   } catch {
-    return res.json({ error: "Invalid JSON body" }, 400);
+    body = {};
   }
 
   const { action } = body;
@@ -47,7 +53,7 @@ Keep it in simple English accessible to South African users. Do not include pric
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${ANTHROPIC_API_KEY}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -81,7 +87,7 @@ Use South African Rand (ZAR). Keep the message template under 150 words, profess
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${ANTHROPIC_API_KEY}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

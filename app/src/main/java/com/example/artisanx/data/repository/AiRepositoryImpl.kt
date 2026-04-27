@@ -25,12 +25,15 @@ class AiRepositoryImpl @Inject constructor(
 
     private val gson = Gson()
 
-    private suspend fun callProxy(body: Map<String, Any>): String? {
+    private suspend fun callProxy(params: Map<String, Any>): String? {
         return try {
+            val encoded = java.net.URLEncoder.encode(gson.toJson(params), "UTF-8")
             val execution = functions.createExecution(
                 functionId = Constants.FUNCTION_AI_PROXY,
-                body = gson.toJson(body),
-                async = false
+                body = "",
+                async = false,
+                path = "/?d=$encoded",
+                method = io.appwrite.enums.ExecutionMethod.GET
             )
             execution.responseBody.takeIf { it.isNotBlank() }
         } catch (_: Exception) {

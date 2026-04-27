@@ -1,4 +1,18 @@
 {
-  "projectId": "69b6a9e3000d77c32d5a",
-  "projectName": "ArtisansX"
+    "projectId": "69b6a9e3000d77c32d5a",
+    "projectName": "ArtisansX",
+    "functions": [
+        {
+            "$id": "ai-proxy",
+            "name": "AI Proxy",
+            "runtime": "node-18.0",
+            "path": "appwrite-functions/ai-proxy",
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "execute": ["any"],
+            "enabled": true,
+            "logging": true,
+            "timeout": 15
+        }
+    ]
 }
