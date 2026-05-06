@@ -35,6 +35,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): Resource<Session> {
         return try {
+            try { account.deleteSession("current") } catch (_: Exception) { }
             val session = account.createEmailPasswordSession(email, password)
             Resource.Success(session)
         } catch (e: Exception) {
