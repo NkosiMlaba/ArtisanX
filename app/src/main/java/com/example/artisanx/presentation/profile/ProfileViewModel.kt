@@ -189,6 +189,7 @@ class ProfileViewModel @Inject constructor(
             when (val res = authRepository.logout()) {
                 is Resource.Success -> {
                     dataStoreManager.clearRole()
+                    com.example.artisanx.util.SessionEventBus.emitSessionChanged()
                     _uiEvent.emit(UiEvent.Navigate("login"))
                 }
                 is Resource.Error -> {

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.lifecycleScope
 import com.example.artisanx.notifications.BidNotificationManager
+import com.example.artisanx.notifications.BookingNotificationManager
 import com.example.artisanx.notifications.ChatNotificationManager
 import com.example.artisanx.presentation.common.OfflineBanner
 import com.example.artisanx.presentation.navigation.AppNavGraph
@@ -62,10 +63,12 @@ class MainActivity : ComponentActivity() {
     interface BidNotifEntryPoint {
         fun bidNotificationManager(): BidNotificationManager
         fun chatNotificationManager(): ChatNotificationManager
+        fun bookingNotificationManager(): BookingNotificationManager
     }
 
     private lateinit var bidNotificationManager: BidNotificationManager
     private lateinit var chatNotificationManager: ChatNotificationManager
+    private lateinit var bookingNotificationManager: BookingNotificationManager
     private var isOnline by mutableStateOf(true)
     private lateinit var connectivityManager: ConnectivityManager
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -98,8 +101,19 @@ class MainActivity : ComponentActivity() {
             .fromApplication(applicationContext, BidNotifEntryPoint::class.java)
         bidNotificationManager = notifEntry.bidNotificationManager()
         chatNotificationManager = notifEntry.chatNotificationManager()
+        bookingNotificationManager = notifEntry.bookingNotificationManager()
         bidNotificationManager.start(lifecycleScope)
         chatNotificationManager.start(lifecycleScope)
+        bookingNotificationManager.start(lifecycleScope)
+
+        // Restart subscriptions whenever the session changes (login / logout / account switch)
+        lifecycleScope.launch {
+            SessionEventBus.sessionChanged.collect {
+                bidNotificationManager.start(lifecycleScope)
+                chatNotificationManager.start(lifecycleScope)
+                bookingNotificationManager.start(lifecycleScope)
+            }
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
@@ -163,6 +177,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (::bidNotificationManager.isInitialized) bidNotificationManager.start(lifecycleScope)
         if (::chatNotificationManager.isInitialized) chatNotificationManager.start(lifecycleScope)
+        if (::bookingNotificationManager.isInitialized) bookingNotificationManager.start(lifecycleScope)
     }
 
     override fun onDestroy() {
@@ -170,6 +185,7 @@ class MainActivity : ComponentActivity() {
         connectivityManager.unregisterNetworkCallback(networkCallback)
         if (::bidNotificationManager.isInitialized) bidNotificationManager.stop()
         if (::chatNotificationManager.isInitialized) chatNotificationManager.stop()
+        if (::bookingNotificationManager.isInitialized) bookingNotificationManager.stop()
     }
 
     override fun onNewIntent(intent: Intent) {

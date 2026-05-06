@@ -32,18 +32,26 @@ class ChatNotificationManager @Inject constructor(
     private var startInFlight = false
 
     fun start(scope: CoroutineScope) {
-        if (startInFlight || subscription != null) {
-            Log.d(TAG, "start() skipped — already subscribed/starting for user=$currentUserId")
-            return
-        }
+        if (startInFlight) return
         startInFlight = true
         scope.launch {
             val userRes = authRepository.getCurrentUser()
             val userId = (userRes as? Resource.Success)?.data?.id
             if (userId.isNullOrBlank()) {
-                Log.d(TAG, "start() skipped — no logged-in user")
+                Log.d(TAG, "start() — no logged-in user; ensuring no stale subscription")
+                closeSubscription()
+                currentUserId = ""
                 startInFlight = false
                 return@launch
+            }
+            if (subscription != null && currentUserId == userId) {
+                Log.d(TAG, "start() — already subscribed for user=$userId")
+                startInFlight = false
+                return@launch
+            }
+            if (subscription != null && currentUserId != userId) {
+                Log.i(TAG, "start() — user changed from '$currentUserId' to '$userId'; resetting subscription")
+                closeSubscription()
             }
             currentUserId = userId
             val channel = "databases.${Constants.DATABASE_ID}.collections.${Constants.COLLECTION_CHAT_MESSAGES}.documents"
@@ -126,10 +134,14 @@ class ChatNotificationManager @Inject constructor(
     }
 
     fun stop() {
-        try { subscription?.close() } catch (_: Exception) {}
-        subscription = null
+        closeSubscription()
         currentUserId = ""
         startInFlight = false
+    }
+
+    private fun closeSubscription() {
+        try { subscription?.close() } catch (_: Exception) {}
+        subscription = null
     }
 }
 

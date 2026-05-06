@@ -56,6 +56,8 @@ class LoginViewModel @Inject constructor(
             val result = authRepository.login(email.value, password.value)
             when (result) {
                 is Resource.Success -> {
+                    // Notify global subscriptions to refresh for the new user
+                    com.example.artisanx.util.SessionEventBus.emitSessionChanged()
                     // Determine the correct destination based on role
                     val destination = resolveDestination()
                     _isLoading.value = false

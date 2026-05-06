@@ -32,44 +32,60 @@ class BidNotificationManager @Inject constructor(
     private var startInFlight = false
 
     fun start(scope: CoroutineScope) {
-        if (startInFlight || subscription != null) {
-            Log.d(TAG, "start() skipped — already subscribed/starting for user=$currentUserId")
-            return
-        }
+        if (startInFlight) return
         startInFlight = true
         scope.launch {
             val userRes = authRepository.getCurrentUser()
             val userId = (userRes as? Resource.Success)?.data?.id
             if (userId.isNullOrBlank()) {
-                Log.d(TAG, "start() skipped — no logged-in user")
+                Log.d(TAG, "start() — no logged-in user; ensuring no stale subscription")
+                closeSubscription()
+                currentUserId = ""
+                startInFlight = false
                 return@launch
+            }
+            if (subscription != null && currentUserId == userId) {
+                Log.d(TAG, "start() — already subscribed for user=$userId")
+                startInFlight = false
+                return@launch
+            }
+            if (subscription != null && currentUserId != userId) {
+                Log.i(TAG, "start() — user changed from '$currentUserId' to '$userId'; resetting subscription")
+                closeSubscription()
             }
             currentUserId = userId
             val channel = "databases.${Constants.DATABASE_ID}.collections.${Constants.COLLECTION_BIDS}.documents"
             Log.d(TAG, "Subscribing to '$channel' for user=$userId")
             subscription = try {
                 realtime.subscribe(channel) { event ->
-                    Log.d(TAG, "bid event received: events=${event.events}")
                     val isCreate = event.events.any { it.endsWith(".create") }
-                    if (!isCreate) {
-                        Log.d(TAG, "  -> skipping non-create event")
-                        return@subscribe
-                    }
+                    val isUpdate = event.events.any { it.endsWith(".update") }
                     @Suppress("UNCHECKED_CAST")
-                    val payload = event.payload as? Map<String, Any>
-                    if (payload == null) {
-                        Log.w(TAG, "  -> payload not a Map: ${event.payload?.javaClass?.simpleName}")
-                        return@subscribe
-                    }
+                    val payload = event.payload as? Map<String, Any> ?: return@subscribe
                     val bidArtisanId = payload["artisanId"] as? String ?: return@subscribe
                     val jobId = payload["jobId"] as? String ?: return@subscribe
-                    if (bidArtisanId == currentUserId) {
-                        Log.d(TAG, "  -> skipping own bid (artisanId == currentUser)")
-                        return@subscribe
+                    val status = payload["status"] as? String
+                    when {
+                        isCreate -> {
+                            // New bid — notify the customer who owns the job
+                            if (bidArtisanId == currentUserId) {
+                                Log.d(TAG, "  -> skipping own bid create")
+                                return@subscribe
+                            }
+                            val priceOffer = (payload["priceOffer"] as? Number)?.toDouble() ?: 0.0
+                            Log.d(TAG, "  -> dispatching handleNewBid jobId=$jobId artisan=$bidArtisanId price=$priceOffer")
+                            scope.launch { handleNewBid(jobId, bidArtisanId, priceOffer) }
+                        }
+                        isUpdate && status == "accepted" -> {
+                            // Bid accepted — notify the artisan whose bid this is
+                            if (bidArtisanId != currentUserId) {
+                                Log.d(TAG, "  -> skipping bid update; not the artisan whose bid was accepted")
+                                return@subscribe
+                            }
+                            Log.d(TAG, "  -> dispatching handleBidAccepted jobId=$jobId")
+                            scope.launch { handleBidAccepted(jobId) }
+                        }
                     }
-                    val priceOffer = (payload["priceOffer"] as? Number)?.toDouble() ?: 0.0
-                    Log.d(TAG, "  -> dispatching handleNewBid jobId=$jobId artisan=$bidArtisanId price=$priceOffer")
-                    scope.launch { handleNewBid(jobId, bidArtisanId, priceOffer) }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to subscribe to bids channel: ${e.message}", e)
@@ -77,6 +93,21 @@ class BidNotificationManager @Inject constructor(
             }
             Log.d(TAG, "Subscription established: ${subscription != null}")
             startInFlight = false
+        }
+    }
+
+    private suspend fun handleBidAccepted(jobId: String) {
+        try {
+            val job = (jobRepository.getJobById(jobId) as? Resource.Success)?.data ?: return
+            Log.i(TAG, "Firing notification: bid accepted on '${job.title}'")
+            ArtisansXFirebaseService.showLocalNotificationForJob(
+                context = context,
+                title = "Bid Accepted!",
+                body = "Your bid on '${job.title}' was accepted. Check your bookings.",
+                jobId = jobId
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "handleBidAccepted failed: ${e.message}", e)
         }
     }
 
@@ -111,9 +142,13 @@ class BidNotificationManager @Inject constructor(
     }
 
     fun stop() {
-        try { subscription?.close() } catch (_: Exception) {}
-        subscription = null
+        closeSubscription()
         currentUserId = ""
         startInFlight = false
+    }
+
+    private fun closeSubscription() {
+        try { subscription?.close() } catch (_: Exception) {}
+        subscription = null
     }
 }

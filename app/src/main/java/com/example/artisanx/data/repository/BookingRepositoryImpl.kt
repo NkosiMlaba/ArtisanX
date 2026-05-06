@@ -126,16 +126,9 @@ class BookingRepositoryImpl @Inject constructor(
             )
             val booking = document.data.toBooking(document.id, document.createdAt)
 
-            // Notify relevant party of status change
-            val (notifTitle, notifBody) = when (status) {
-                "accepted" -> "Booking Accepted" to "The artisan accepted your booking. They'll be in touch soon."
-                "in_progress" -> "Job Started" to "The artisan has started work on your job."
-                "completed" -> "Job Completed" to "The job has been marked as complete. Please leave a review!"
-                else -> "" to ""
-            }
-            if (notifTitle.isNotBlank()) {
-                ArtisansXFirebaseService.showLocalNotification(context, notifTitle, notifBody)
-            }
+            // Cross-device notification of the OTHER party is handled by
+            // BookingNotificationManager via Realtime — do not fire locally
+            // here, otherwise it shows on the actor's device (wrong recipient).
 
             // Cascade job status changes
             val jobStatusUpdate = when (status) {

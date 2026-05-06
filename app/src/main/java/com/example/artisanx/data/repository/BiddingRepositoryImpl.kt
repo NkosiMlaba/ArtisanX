@@ -237,12 +237,9 @@ class BiddingRepositoryImpl @Inject constructor(
                 )
             )
 
-            // Notify the artisan their bid was accepted
-            ArtisansXFirebaseService.showLocalNotification(
-                context,
-                "Bid Accepted!",
-                "Your bid was accepted. Check your bookings to get started."
-            )
+            // Cross-device "Bid accepted" notification for the artisan is
+            // handled by BidNotificationManager via Realtime — do not fire
+            // locally here (this code runs on the customer's device).
 
             Resource.Success(Unit)
         } catch (e: Exception) {
