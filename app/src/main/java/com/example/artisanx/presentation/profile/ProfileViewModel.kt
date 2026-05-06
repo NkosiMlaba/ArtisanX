@@ -1,6 +1,7 @@
 package com.example.artisanx.presentation.profile
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -56,6 +57,13 @@ class ProfileViewModel @Inject constructor(
 
     private val _reviews = mutableStateOf<List<Review>>(emptyList())
     val reviews: State<List<Review>> = _reviews
+
+    val computedAvgRating: State<Double> = derivedStateOf {
+        val list = _reviews.value
+        if (list.isEmpty()) 0.0 else list.sumOf { it.rating.toDouble() } / list.size
+    }
+
+    val computedReviewCount: State<Int> = derivedStateOf { _reviews.value.size }
 
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
