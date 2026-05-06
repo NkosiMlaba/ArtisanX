@@ -21,7 +21,7 @@ google-services.json
 .vscode
 docs
 
-# folders
+# hidden folders
 .*/
 # .md files
 *.md
