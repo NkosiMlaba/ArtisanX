@@ -35,14 +35,30 @@ class ArtisansXFirebaseService : FirebaseMessagingService() {
         }
 
         const val EXTRA_BOOKING_ID = "bookingId"
+        const val EXTRA_JOB_ID = "jobId"
 
         fun showLocalNotification(context: Context, title: String, body: String, bookingId: String? = null) {
+            showLocalNotificationInternal(context, title, body, bookingId, null)
+        }
+
+        fun showLocalNotificationForJob(context: Context, title: String, body: String, jobId: String) {
+            showLocalNotificationInternal(context, title, body, null, jobId)
+        }
+
+        private fun showLocalNotificationInternal(
+            context: Context,
+            title: String,
+            body: String,
+            bookingId: String?,
+            jobId: String?
+        ) {
             val intent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 bookingId?.let { putExtra(EXTRA_BOOKING_ID, it) }
+                jobId?.let { putExtra(EXTRA_JOB_ID, it) }
             }
             val pendingIntent = PendingIntent.getActivity(
-                context, 0, intent,
+                context, notificationId, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 

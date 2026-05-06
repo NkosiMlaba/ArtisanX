@@ -131,10 +131,10 @@ class ProfileRepositoryImpl @Inject constructor(private val databases: Databases
                                             "workPhotoIds" to workPhotoIds,
                                             "certifications" to certifications,
                                             "yearsExperience" to yearsExperience,
-                                            "verified" to false,
+                                            "verified" to !isStudent,
                                             "badge" to
                                                     (if (isStudent) "Student Artisan"
-                                                    else "Independent Artisan"),
+                                                    else "Verified Artisan"),
                                             "avgRating" to 0.0,
                                             "reviewCount" to 0,
                                             "createdAt" to getCurrentIso8601Date()

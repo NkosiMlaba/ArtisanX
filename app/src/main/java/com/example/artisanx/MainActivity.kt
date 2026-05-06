@@ -1,14 +1,19 @@
 package com.example.artisanx
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,11 +36,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.lifecycleScope
+import com.example.artisanx.notifications.BidNotificationManager
 import com.example.artisanx.presentation.common.OfflineBanner
 import com.example.artisanx.presentation.navigation.AppNavGraph
 import com.example.artisanx.ui.theme.ArtisanXTheme
 import com.example.artisanx.util.SessionEventBus
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,8 +55,19 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface BidNotifEntryPoint {
+        fun bidNotificationManager(): BidNotificationManager
+    }
+
+    private lateinit var bidNotificationManager: BidNotificationManager
     private var isOnline by mutableStateOf(true)
     private lateinit var connectivityManager: ConnectivityManager
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* no-op: app continues either way */ }
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) { isOnline = true }
         override fun onLost(network: Network) { isOnline = false }
@@ -68,6 +90,20 @@ class MainActivity : ComponentActivity() {
         isOnline = connectivityManager.activeNetwork
             ?.let { connectivityManager.getNetworkCapabilities(it) }
             ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
+
+        bidNotificationManager = EntryPointAccessors
+            .fromApplication(applicationContext, BidNotifEntryPoint::class.java)
+            .bidNotificationManager()
+        bidNotificationManager.start(lifecycleScope)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         setContent {
             ArtisanXTheme {
@@ -108,6 +144,7 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 startDestination = viewModel.startDestination.value,
                                 pendingBookingId = viewModel.pendingDeepLinkBookingId.value,
+                                pendingJobId = viewModel.pendingDeepLinkJobId.value,
                                 onDeepLinkConsumed = viewModel::clearDeepLink
                             )
                         }
@@ -117,9 +154,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::bidNotificationManager.isInitialized) {
+            bidNotificationManager.start(lifecycleScope)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         connectivityManager.unregisterNetworkCallback(networkCallback)
+        if (::bidNotificationManager.isInitialized) bidNotificationManager.stop()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -131,6 +176,10 @@ class MainActivity : ComponentActivity() {
         val bookingId = intent.getStringExtra(ArtisansXFirebaseService.EXTRA_BOOKING_ID)
         if (!bookingId.isNullOrBlank()) {
             viewModel.setDeepLink(bookingId)
+        }
+        val jobId = intent.getStringExtra(ArtisansXFirebaseService.EXTRA_JOB_ID)
+        if (!jobId.isNullOrBlank()) {
+            viewModel.setJobDeepLink(jobId)
         }
     }
 }

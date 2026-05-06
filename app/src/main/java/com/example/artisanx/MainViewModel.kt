@@ -27,12 +27,20 @@ class MainViewModel @Inject constructor(
     private val _pendingDeepLinkBookingId = mutableStateOf<String?>(null)
     val pendingDeepLinkBookingId: State<String?> = _pendingDeepLinkBookingId
 
+    private val _pendingDeepLinkJobId = mutableStateOf<String?>(null)
+    val pendingDeepLinkJobId: State<String?> = _pendingDeepLinkJobId
+
     fun setDeepLink(bookingId: String?) {
         _pendingDeepLinkBookingId.value = bookingId
     }
 
+    fun setJobDeepLink(jobId: String?) {
+        _pendingDeepLinkJobId.value = jobId
+    }
+
     fun clearDeepLink() {
         _pendingDeepLinkBookingId.value = null
+        _pendingDeepLinkJobId.value = null
     }
 
     init {

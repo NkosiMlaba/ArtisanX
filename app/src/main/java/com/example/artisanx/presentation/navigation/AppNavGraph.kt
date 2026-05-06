@@ -54,15 +54,24 @@ fun AppNavGraph(
     navController: NavHostController,
     startDestination: String,
     pendingBookingId: String? = null,
+    pendingJobId: String? = null,
     onDeepLinkConsumed: () -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
-    // Navigate to chat screen when a notification is tapped
+    // Notification deep links: chat (bookingId) or bids list (jobId)
     LaunchedEffect(pendingBookingId) {
         if (!pendingBookingId.isNullOrBlank()) {
             navController.navigate(Screen.Chat.createRoute(pendingBookingId)) {
+                launchSingleTop = true
+            }
+            onDeepLinkConsumed()
+        }
+    }
+    LaunchedEffect(pendingJobId) {
+        if (!pendingJobId.isNullOrBlank()) {
+            navController.navigate(Screen.BidsList.createRoute(pendingJobId)) {
                 launchSingleTop = true
             }
             onDeepLinkConsumed()
