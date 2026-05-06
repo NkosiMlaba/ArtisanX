@@ -1,20 +1,27 @@
 package com.example.artisanx.presentation.artisan
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.artisanx.domain.model.Bid
 import androidx.compose.foundation.layout.PaddingValues
+import com.example.artisanx.presentation.common.iconForCategory
 import com.example.artisanx.presentation.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,9 +117,9 @@ fun ArtisanDashboardScreen(
                     )
                 }
             } else {
-                items(myBids.take(10)) { bid ->
-                    MyBidItem(bid = bid, onClick = {
-                        navController.navigate(Screen.JobDetail.createRoute(bid.jobId))
+                items(myBids.take(10)) { bidWithJob ->
+                    MyBidItem(bidWithJob = bidWithJob, onClick = {
+                        navController.navigate(Screen.JobDetail.createRoute(bidWithJob.bid.jobId))
                     })
                 }
             }
@@ -121,33 +128,110 @@ fun ArtisanDashboardScreen(
 }
 
 @Composable
-fun MyBidItem(bid: Bid, onClick: () -> Unit) {
-    Card(
+fun MyBidItem(bidWithJob: BidWithJob, onClick: () -> Unit) {
+    val bid = bidWithJob.bid
+    val job = bidWithJob.job
+    val category = job?.category ?: "Job"
+    val title = job?.title ?: "Job #${bid.jobId.take(6)}"
+    val isCompleted = job?.status == "completed"
+
+    val statusColor = when {
+        isCompleted -> MaterialTheme.colorScheme.tertiary
+        bid.status == "accepted" -> MaterialTheme.colorScheme.primary
+        bid.status == "rejected" -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.outline
+    }
+    val statusLabel = when {
+        isCompleted -> "Completed"
+        else -> bid.status.replaceFirstChar { it.uppercase() }
+    }
+
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "R${bid.priceOffer}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "Est. ${bid.estimatedHours}h", style = MaterialTheme.typography.bodySmall)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = iconForCategory(category),
+                        contentDescription = category,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = category,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.small)
+                        .background(statusColor.copy(alpha = 0.12f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = statusLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
-            val chipColor = when (bid.status) {
-                "accepted" -> MaterialTheme.colorScheme.primary
-                "rejected" -> MaterialTheme.colorScheme.error
-                else -> MaterialTheme.colorScheme.outline
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.AttachMoney,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "R${bid.priceOffer.toInt()}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.AccessTime,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "${bid.estimatedHours}h",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            SuggestionChip(
-                onClick = {},
-                label = { Text(bid.status.replaceFirstChar { it.uppercase() }) },
-                colors = SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = chipColor.copy(alpha = 0.12f),
-                    labelColor = chipColor
-                )
-            )
         }
     }
 }

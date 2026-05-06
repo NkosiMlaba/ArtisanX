@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.presentation.common.LocationPickerScreen
+import com.example.artisanx.presentation.common.RatingStars
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.collectLatest
 
@@ -223,31 +225,35 @@ fun ArtisanProfileScreen(
                     } else {
                         val fullName = profileDoc?.data?.get("fullName") as? String ?: user.name
                         val badge = profileDoc?.data?.get("badge") as? String ?: "Artisan"
-                        val avgRating = when (val r = profileDoc?.data?.get("avgRating")) {
-                            is Double -> r; is Float -> r.toDouble(); is Int -> r.toDouble(); else -> 0.0
-                        }
-                        val reviewCount = when (val c = profileDoc?.data?.get("reviewCount")) {
-                            is Int -> c; is Long -> c.toInt(); else -> 0
-                        }
+                        val isVerified = (profileDoc?.data?.get("verified") as? Boolean) == true ||
+                                badge.equals("Verified Artisan", ignoreCase = true)
+                        val avgRating = viewModel.computedAvgRating.value
+                        val reviewCount = viewModel.computedReviewCount.value
 
-                        Text(fullName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(badge, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Email: ${user.email}", style = MaterialTheme.typography.bodyMedium)
-
-                        // Star rating display
-                        Spacer(modifier = Modifier.height(12.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            (1..5).forEach { star ->
+                            Text(fullName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            if (isVerified) {
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
-                                    imageVector = if (star <= avgRating.toInt()) Icons.Filled.Star else Icons.Outlined.Star,
-                                    contentDescription = null,
+                                    imageVector = Icons.Filled.Verified,
+                                    contentDescription = "Verified Artisan",
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (!isVerified) {
+                            Text(badge, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        Text("Email: ${user.email}", style = MaterialTheme.typography.bodyMedium)
+
+                        // Star rating display with fractional fill
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RatingStars(rating = avgRating, starSize = 22.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = if (reviewCount > 0) String.format("%.1f (%d reviews)", avgRating, reviewCount)
                                        else "No reviews yet",
@@ -280,14 +286,7 @@ fun ArtisanProfileScreen(
                                 Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            (1..5).forEach { star ->
-                                                Icon(
-                                                    imageVector = if (star <= review.rating) Icons.Filled.Star else Icons.Outlined.Star,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                            }
+                                            RatingStars(rating = review.rating.toDouble(), starSize = 14.dp)
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = review.createdAt.take(10),
