@@ -26,7 +26,10 @@ permissions:
   contents: write
 
 env:
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
+  # Opt into Node 24 for JS actions ahead of the 2026-06-02 default switch,
+  # silences the "Node.js 20 actions are deprecated" warning.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   build:
@@ -101,6 +104,18 @@ jobs:
 
       - name: Grant execute on gradlew
         run: chmod +x ./gradlew
+
+      - name: Strip local-only Gradle properties
+        # gradle.properties pins org.gradle.java.home to a Windows path for
+        # local dev. On Linux runners that path doesn't exist, so we drop
+        # the line and let Gradle pick up the runner's JAVA_HOME instead.
+        run: |
+          if grep -q '^org\.gradle\.java\.home=' gradle.properties; then
+            sed -i '/^org\.gradle\.java\.home=/d' gradle.properties
+            echo "Removed org.gradle.java.home; Gradle will use JAVA_HOME=$JAVA_HOME"
+          else
+            echo "No org.gradle.java.home in gradle.properties, nothing to strip"
+          fi
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
