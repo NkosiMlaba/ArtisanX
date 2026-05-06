@@ -11,6 +11,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,7 +31,16 @@ fun ChatListScreen(
     val isLoading = viewModel.isLoading.value
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Messages") }) }
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text("Messages") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                )
+            )
+        }
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = isLoading,

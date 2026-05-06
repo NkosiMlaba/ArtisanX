@@ -6,9 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.artisanx.presentation.common.AuroraBackground
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -28,7 +30,9 @@ fun RoleSelectionScreen(
         }
     }
 
-    Scaffold { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize()) {
+    AuroraBackground()
+    Scaffold(containerColor = Color.Transparent) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -59,5 +63,6 @@ fun RoleSelectionScreen(
                 Text("I am an Artisan / Worker")
             }
         }
+    }
     }
 }

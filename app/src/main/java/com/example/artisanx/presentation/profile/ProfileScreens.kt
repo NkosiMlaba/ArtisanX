@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -59,7 +60,16 @@ fun CustomerProfileScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Customer Profile") }) }
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text("Customer Profile") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                )
+            )
+        }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             if (isLoading && user == null) {
@@ -178,7 +188,16 @@ fun ArtisanProfileScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Artisan Profile") }) }
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text("Artisan Profile") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                )
+            )
+        }
     ) { padding ->
          Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (isLoading && user == null) {

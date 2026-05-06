@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.presentation.navigation.Screen
+import com.example.artisanx.presentation.common.AuroraBackground
 import com.example.artisanx.presentation.common.EmptyState
 import com.example.artisanx.presentation.common.JobCardSkeleton
 import com.example.artisanx.presentation.common.iconForCategory
@@ -87,10 +89,17 @@ fun JobBrowseScreen(
         )
     }
 
-    Scaffold(
+    Box(modifier = Modifier.fillMaxSize()) {
+        AuroraBackground()
+        Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Browse Open Jobs") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                ),
                 actions = {
                     IconButton(onClick = { isMapView = !isMapView }) {
                         Icon(
@@ -230,6 +239,7 @@ fun JobBrowseScreen(
                     }
                 }
             }
+        }
         }
     }
 }

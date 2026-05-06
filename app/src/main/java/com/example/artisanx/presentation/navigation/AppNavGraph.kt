@@ -1,5 +1,7 @@
 package com.example.artisanx.presentation.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
@@ -13,6 +15,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.example.artisanx.presentation.common.AuroraBackground
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -87,7 +91,10 @@ fun AppNavGraph(
 
     val showBottomBar = isCustomerFlow || isArtisanFlow
 
+    Box(modifier = Modifier.fillMaxSize()) {
+    AuroraBackground()
     Scaffold(
+        containerColor = Color.Transparent,
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
@@ -219,5 +226,6 @@ fun AppNavGraph(
                 PrivacyPolicyScreen(navController = navController)
             }
         }
+    }
     }
 }

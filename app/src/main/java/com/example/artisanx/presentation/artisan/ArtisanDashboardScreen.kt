@@ -15,12 +15,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.PaddingValues
+import com.example.artisanx.presentation.common.AuroraBackground
 import com.example.artisanx.presentation.common.iconForCategory
 import com.example.artisanx.presentation.navigation.Screen
 
@@ -38,14 +40,25 @@ fun ArtisanDashboardScreen(
         viewModel.loadDashboard()
     }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Artisan Dashboard") }) }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        AuroraBackground()
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text("Artisan Dashboard") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent
+                    )
+                )
+            }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Credit balance card
             item {
                 ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -122,6 +135,7 @@ fun ArtisanDashboardScreen(
                         navController.navigate(Screen.JobDetail.createRoute(bidWithJob.bid.jobId))
                     })
                 }
+            }
             }
         }
     }
