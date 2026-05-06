@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.lifecycleScope
 import com.example.artisanx.notifications.BidNotificationManager
+import com.example.artisanx.notifications.ChatNotificationManager
 import com.example.artisanx.presentation.common.OfflineBanner
 import com.example.artisanx.presentation.navigation.AppNavGraph
 import com.example.artisanx.ui.theme.ArtisanXTheme
@@ -60,9 +61,11 @@ class MainActivity : ComponentActivity() {
     @InstallIn(SingletonComponent::class)
     interface BidNotifEntryPoint {
         fun bidNotificationManager(): BidNotificationManager
+        fun chatNotificationManager(): ChatNotificationManager
     }
 
     private lateinit var bidNotificationManager: BidNotificationManager
+    private lateinit var chatNotificationManager: ChatNotificationManager
     private var isOnline by mutableStateOf(true)
     private lateinit var connectivityManager: ConnectivityManager
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -91,10 +94,12 @@ class MainActivity : ComponentActivity() {
             ?.let { connectivityManager.getNetworkCapabilities(it) }
             ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
 
-        bidNotificationManager = EntryPointAccessors
+        val notifEntry = EntryPointAccessors
             .fromApplication(applicationContext, BidNotifEntryPoint::class.java)
-            .bidNotificationManager()
+        bidNotificationManager = notifEntry.bidNotificationManager()
+        chatNotificationManager = notifEntry.chatNotificationManager()
         bidNotificationManager.start(lifecycleScope)
+        chatNotificationManager.start(lifecycleScope)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
@@ -156,15 +161,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::bidNotificationManager.isInitialized) {
-            bidNotificationManager.start(lifecycleScope)
-        }
+        if (::bidNotificationManager.isInitialized) bidNotificationManager.start(lifecycleScope)
+        if (::chatNotificationManager.isInitialized) chatNotificationManager.start(lifecycleScope)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         connectivityManager.unregisterNetworkCallback(networkCallback)
         if (::bidNotificationManager.isInitialized) bidNotificationManager.stop()
+        if (::chatNotificationManager.isInitialized) chatNotificationManager.stop()
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -7,8 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.artisanx.ArtisansXFirebaseService
 import com.example.artisanx.domain.model.ChatMessage
+import com.example.artisanx.notifications.ActiveChatTracker
 import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BookingRepository
 import com.example.artisanx.domain.repository.ChatRepository
@@ -66,6 +66,8 @@ class ChatViewModel @Inject constructor(
     private var realtimeSubscription: java.io.Closeable? = null
 
     init {
+        ActiveChatTracker.activeBookingId = bookingId
+        android.util.Log.d("ChatViewModel", "init bookingId=$bookingId, activeChat set")
         loadUserAndContext()
         subscribeToRealtime()
     }
@@ -120,23 +122,7 @@ class ChatViewModel @Inject constructor(
         if (bookingId.isBlank()) return
         when (val result = chatRepository.getMessages(bookingId)) {
             is Resource.Success -> {
-                val newMessages = result.data ?: emptyList()
-                val previousIds = _messages.value.map { it.id }.toSet()
-                val currentId = _currentUserId.value
-                // Notify about new messages from the other party (not our own sends)
-                if (currentId.isNotBlank() && previousIds.isNotEmpty()) {
-                    newMessages
-                        .filter { it.id !in previousIds && it.senderId != currentId }
-                        .forEach { msg ->
-                            ArtisansXFirebaseService.showLocalNotification(
-                                context,
-                                _otherPartyName.value.ifBlank { "New Message" },
-                                msg.message.take(80),
-                                bookingId
-                            )
-                        }
-                }
-                _messages.value = newMessages
+                _messages.value = result.data ?: emptyList()
             }
             else -> Unit
         }
@@ -191,6 +177,9 @@ class ChatViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         realtimeSubscription?.close()
+        if (ActiveChatTracker.activeBookingId == bookingId) {
+            ActiveChatTracker.activeBookingId = null
+        }
     }
 
     sealed class UiEvent {
