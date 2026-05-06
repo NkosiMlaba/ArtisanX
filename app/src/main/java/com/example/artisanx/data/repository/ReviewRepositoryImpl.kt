@@ -2,7 +2,7 @@
 
 import com.example.artisanx.domain.model.Review
 import com.example.artisanx.domain.model.toReview
-import com.example.artisanx.domain.repository.ProfileRepository
+import com.example.artisanx.domain.repository.RatingStats
 import com.example.artisanx.domain.repository.ReviewRepository
 import com.example.artisanx.util.Constants
 import com.example.artisanx.util.Resource
@@ -19,8 +19,7 @@ import javax.inject.Inject
 import com.example.artisanx.util.isSessionExpired
 
 class ReviewRepositoryImpl @Inject constructor(
-    private val databases: Databases,
-    private val profileRepository: ProfileRepository
+    private val databases: Databases
 ) : ReviewRepository {
 
     private fun getCurrentIso8601Date(): String {
@@ -55,9 +54,6 @@ class ReviewRepositoryImpl @Inject constructor(
                 )
             )
 
-            // Update artisan's avgRating and reviewCount
-            updateArtisanRating(artisanId, rating)
-
             Resource.Success(document.data.toReview(document.id, document.createdAt))
         } catch (e: Exception) {
             if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
@@ -65,32 +61,30 @@ class ReviewRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun updateArtisanRating(artisanId: String, newRating: Int) {
-        try {
-            val profileRes = profileRepository.getArtisanProfile(artisanId)
-            if (profileRes is Resource.Success && profileRes.data != null) {
-                val data = profileRes.data.data
-                val oldAvg = when (val a = data["avgRating"]) {
-                    is Double -> a
-                    is Float -> a.toDouble()
-                    is Int -> a.toDouble()
-                    else -> 0.0
-                }
-                val oldCount = when (val c = data["reviewCount"]) {
-                    is Int -> c
-                    is Long -> c.toInt()
-                    else -> 0
-                }
-                val newCount = oldCount + 1
-                val newAvg = ((oldAvg * oldCount) + newRating) / newCount
-
-                profileRepository.updateArtisanProfile(
-                    artisanId,
-                    mapOf("avgRating" to newAvg, "reviewCount" to newCount)
+    override suspend fun getArtisanRatingStats(artisanId: String): Resource<RatingStats> {
+        return try {
+            val response = databases.listDocuments(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_REVIEWS,
+                queries = listOf(
+                    Query.equal("artisanId", artisanId),
+                    Query.limit(100)
                 )
+            )
+            val ratings = response.documents.mapNotNull {
+                when (val r = it.data["rating"]) {
+                    is Int -> r
+                    is Long -> r.toInt()
+                    is Double -> r.toInt()
+                    else -> null
+                }
             }
+            val stats = if (ratings.isEmpty()) RatingStats.EMPTY
+                        else RatingStats(avg = ratings.sum().toDouble() / ratings.size, count = ratings.size)
+            Resource.Success(stats)
         } catch (e: Exception) {
             if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
+            Resource.Error(e.message ?: "Failed to load rating stats")
         }
     }
 

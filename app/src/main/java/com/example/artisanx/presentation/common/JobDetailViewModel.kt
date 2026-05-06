@@ -14,8 +14,13 @@ import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BiddingRepository
 import com.example.artisanx.domain.repository.JobRepository
 import com.example.artisanx.domain.repository.ProfileRepository
+import com.example.artisanx.domain.repository.RatingStats
+import com.example.artisanx.domain.repository.ReviewRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
@@ -28,6 +33,7 @@ class JobDetailViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val biddingRepository: BiddingRepository,
     private val profileRepository: ProfileRepository,
+    private val reviewRepository: ReviewRepository,
     private val aiRepository: AiRepository,
     private val dataStoreManager: DataStoreManager,
     savedStateHandle: SavedStateHandle
@@ -129,13 +135,23 @@ class JobDetailViewModel @Inject constructor(
                 // Fetch artisans in the same trade category
                 val artisanDocsRes = profileRepository.getArtisansByCategory(job.category)
                 if (artisanDocsRes is Resource.Success) {
-                    val artisanSummaries = artisanDocsRes.data ?: emptyList()
-                    if (artisanSummaries.isNotEmpty()) {
+                    val rawSummaries = artisanDocsRes.data ?: emptyList()
+                    if (rawSummaries.isNotEmpty()) {
+                        // Override stale avgRating/reviewCount with live counts from reviews collection
+                        val enrichedSummaries = coroutineScope {
+                            rawSummaries.map { summary ->
+                                async {
+                                    val stats = (reviewRepository.getArtisanRatingStats(summary.artisanId) as? Resource.Success)
+                                        ?.data ?: RatingStats.EMPTY
+                                    summary.copy(rating = stats.avg, reviewCount = stats.count)
+                                }
+                            }.awaitAll()
+                        }
                         when (val matchRes = aiRepository.matchArtisans(
                             jobTitle = job.title,
                             jobDescription = job.description,
                             category = job.category,
-                            artisans = artisanSummaries
+                            artisans = enrichedSummaries
                         )) {
                             is Resource.Success -> _suggestedArtisans.value = matchRes.data ?: emptyList()
                             else -> Unit

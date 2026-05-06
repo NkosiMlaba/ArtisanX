@@ -11,8 +11,13 @@ import com.example.artisanx.domain.repository.AuthRepository
 import com.example.artisanx.domain.repository.BiddingRepository
 import com.example.artisanx.domain.repository.JobRepository
 import com.example.artisanx.domain.repository.ProfileRepository
+import com.example.artisanx.domain.repository.RatingStats
+import com.example.artisanx.domain.repository.ReviewRepository
 import com.example.artisanx.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -32,6 +37,7 @@ class BidsListViewModel @Inject constructor(
     private val jobRepository: JobRepository,
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    private val reviewRepository: ReviewRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -65,26 +71,23 @@ class BidsListViewModel @Inject constructor(
             when (val bidsRes = biddingRepository.getBidsForJob(jobId)) {
                 is Resource.Success -> {
                     val rawBids = bidsRes.data ?: emptyList()
-                    // Enrich each bid with artisan profile info
-                    val enriched = rawBids.map { bid ->
-                        val profileRes = profileRepository.getArtisanProfile(bid.artisanId)
-                        val profile = (profileRes as? Resource.Success)?.data?.data
-                        BidWithArtisan(
-                            bid = bid,
-                            artisanName = profile?.get("fullName") as? String ?: "Artisan",
-                            artisanBadge = profile?.get("badge") as? String ?: "",
-                            artisanRating = when (val r = profile?.get("avgRating")) {
-                                is Double -> r
-                                is Float -> r.toDouble()
-                                is Int -> r.toDouble()
-                                else -> 0.0
-                            },
-                            artisanReviewCount = when (val c = profile?.get("reviewCount")) {
-                                is Int -> c
-                                is Long -> c.toInt()
-                                else -> 0
+                    // Enrich each bid with artisan profile info + live rating stats, in parallel
+                    val enriched = coroutineScope {
+                        rawBids.map { bid ->
+                            async {
+                                val profileDeferred = async { profileRepository.getArtisanProfile(bid.artisanId) }
+                                val statsDeferred = async { reviewRepository.getArtisanRatingStats(bid.artisanId) }
+                                val profile = (profileDeferred.await() as? Resource.Success)?.data?.data
+                                val stats = (statsDeferred.await() as? Resource.Success)?.data ?: RatingStats.EMPTY
+                                BidWithArtisan(
+                                    bid = bid,
+                                    artisanName = profile?.get("fullName") as? String ?: "Artisan",
+                                    artisanBadge = profile?.get("badge") as? String ?: "",
+                                    artisanRating = stats.avg,
+                                    artisanReviewCount = stats.count
+                                )
                             }
-                        )
+                        }.awaitAll()
                     }
                     _bids.value = enriched
                 }
