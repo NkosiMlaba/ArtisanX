@@ -122,4 +122,36 @@ class ReviewRepositoryImpl @Inject constructor(
             Resource.Error(e.message ?: "Failed to load reviews")
         }
     }
+
+    override suspend fun getReviewsByCustomer(customerId: String): Resource<List<Review>> {
+        return try {
+            val response = databases.listDocuments(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_REVIEWS,
+                queries = listOf(
+                    Query.equal("customerId", customerId),
+                    Query.orderDesc("createdAt")
+                )
+            )
+            val reviews = response.documents.map { it.data.toReview(it.id, it.createdAt) }
+            Resource.Success(reviews)
+        } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
+            Resource.Error(e.message ?: "Failed to load reviews")
+        }
+    }
+
+    override suspend fun getReviewById(reviewId: String): Resource<Review> {
+        return try {
+            val doc = databases.getDocument(
+                databaseId = Constants.DATABASE_ID,
+                collectionId = Constants.COLLECTION_REVIEWS,
+                documentId = reviewId
+            )
+            Resource.Success(doc.data.toReview(doc.id, doc.createdAt))
+        } catch (e: Exception) {
+            if (e.isSessionExpired()) com.example.artisanx.util.SessionEventBus.emitExpired()
+            Resource.Error(e.message ?: "Failed to load review")
+        }
+    }
 }

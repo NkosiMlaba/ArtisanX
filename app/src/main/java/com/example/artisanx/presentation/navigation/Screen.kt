@@ -41,6 +41,18 @@ sealed class Screen(val route: String) {
         fun createRoute(bookingId: String, artisanId: String) = "review/$bookingId/$artisanId"
     }
 
+    // Reviews list (mode = "received" for artisans, "given" for customers)
+    object ReviewsList : Screen("reviews_list/{mode}") {
+        fun createRoute(mode: String) = "reviews_list/$mode"
+        const val MODE_RECEIVED = "received"
+        const val MODE_GIVEN = "given"
+    }
+
+    // Single review detail
+    object ReviewDetail : Screen("review_detail/{reviewId}") {
+        fun createRoute(reviewId: String) = "review_detail/$reviewId"
+    }
+
     // Credits
     object BuyCredits : Screen("buy_credits")
 

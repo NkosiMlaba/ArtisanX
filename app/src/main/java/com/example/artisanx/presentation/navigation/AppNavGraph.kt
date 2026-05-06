@@ -35,6 +35,8 @@ import com.example.artisanx.presentation.common.JobDetailScreen
 import com.example.artisanx.presentation.credits.BuyCreditsScreen
 import com.example.artisanx.presentation.profile.*
 import com.example.artisanx.presentation.review.ReviewScreen
+import com.example.artisanx.presentation.reviews.ReviewDetailScreen
+import com.example.artisanx.presentation.reviews.ReviewsListScreen
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object CustomerHome : BottomNavItem(Screen.CustomerDashboard.route, "Home", Icons.Default.Home)
@@ -199,6 +201,12 @@ fun AppNavGraph(
             // Review
             composable(route = Screen.Review.route) {
                 ReviewScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
+            composable(route = Screen.ReviewsList.route) {
+                ReviewsListScreen(navController = navController)
+            }
+            composable(route = Screen.ReviewDetail.route) {
+                ReviewDetailScreen(navController = navController)
             }
 
             // Buy Credits

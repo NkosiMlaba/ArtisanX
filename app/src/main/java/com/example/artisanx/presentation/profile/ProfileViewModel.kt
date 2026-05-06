@@ -65,6 +65,9 @@ class ProfileViewModel @Inject constructor(
 
     val computedReviewCount: State<Int> = derivedStateOf { _reviews.value.size }
 
+    private val _customerReviewsGivenCount = mutableStateOf(0)
+    val customerReviewsGivenCount: State<Int> = _customerReviewsGivenCount
+
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
@@ -96,6 +99,10 @@ class ProfileViewModel @Inject constructor(
                         val profileRes = profileRepository.getUserProfile(userId)
                         if (profileRes is Resource.Success && profileRes.data != null) {
                             _profileDoc.value = profileRes.data
+                        }
+                        val givenRes = reviewRepository.getReviewsByCustomer(userId)
+                        if (givenRes is Resource.Success) {
+                            _customerReviewsGivenCount.value = givenRes.data?.size ?: 0
                         }
                     }
                 }

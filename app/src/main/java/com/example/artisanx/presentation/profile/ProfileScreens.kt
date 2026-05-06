@@ -1,5 +1,6 @@
 package com.example.artisanx.presentation.profile
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,8 +24,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.RateReview
 import com.example.artisanx.presentation.common.LocationPickerScreen
 import com.example.artisanx.presentation.common.RatingStars
+import com.example.artisanx.presentation.navigation.Screen
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.collectLatest
 
@@ -86,6 +90,18 @@ fun CustomerProfileScreen(
                         Text("Name: $fullName", style = MaterialTheme.typography.headlineSmall)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Email: ${user.email}", style = MaterialTheme.typography.bodyLarge)
+
+                        Spacer(modifier = Modifier.height(20.dp))
+                        ReviewsNavButton(
+                            count = viewModel.customerReviewsGivenCount.value,
+                            label = "Reviews Given",
+                            emptyLabel = "No reviews yet",
+                            onClick = {
+                                navController.navigate(
+                                    Screen.ReviewsList.createRoute(Screen.ReviewsList.MODE_GIVEN)
+                                )
+                            }
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -127,7 +143,6 @@ fun ArtisanProfileScreen(
     val profileDoc = viewModel.profileDoc.value
     val isLoading = viewModel.isLoading.value
     val isEditing = viewModel.isEditing.value
-    val reviews = viewModel.reviews.value
     var showMapPicker by remember { mutableStateOf(false) }
 
     if (showMapPicker) {
@@ -277,29 +292,17 @@ fun ArtisanProfileScreen(
                             }
                         }
 
-                        // Reviews list
-                        if (reviews.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Customer Reviews", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            reviews.forEach { review ->
-                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            RatingStars(rating = review.rating.toDouble(), starSize = 14.dp)
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = review.createdAt.take(10),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(review.comment, style = MaterialTheme.typography.bodySmall)
-                                    }
-                                }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        ReviewsNavButton(
+                            count = reviewCount,
+                            label = "Reviews Received",
+                            emptyLabel = "No reviews yet",
+                            onClick = {
+                                navController.navigate(
+                                    Screen.ReviewsList.createRoute(Screen.ReviewsList.MODE_RECEIVED)
+                                )
                             }
-                        }
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -326,6 +329,60 @@ fun ArtisanProfileScreen(
                         Text("Logout", color = MaterialTheme.colorScheme.error)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewsNavButton(
+    count: Int,
+    label: String,
+    emptyLabel: String,
+    onClick: () -> Unit
+) {
+    val enabled = count > 0
+    OutlinedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .let { if (enabled) it.clickable { onClick() } else it },
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.RateReview,
+                contentDescription = null,
+                tint = if (enabled) MaterialTheme.colorScheme.primary
+                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (enabled) "$label ($count)" else label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (!enabled) {
+                    Text(
+                        text = emptyLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            if (enabled) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
