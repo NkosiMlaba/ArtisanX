@@ -20,3 +20,8 @@ google-services.json
 .idea
 .vscode
 docs
+
+# folders
+.*/
+# .md files
+*.md
