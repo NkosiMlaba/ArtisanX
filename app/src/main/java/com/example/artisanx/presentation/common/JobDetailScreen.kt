@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
 import coil.compose.AsyncImage
 import com.example.artisanx.util.AppwriteFileUtils
 import com.google.android.gms.maps.model.CameraPosition
@@ -55,6 +56,7 @@ fun JobDetailScreen(
     val isMatchLoading = viewModel.isMatchLoading.value
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var fullscreenImageUrl by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
     LaunchedEffect(key1 = true) {
@@ -187,12 +189,14 @@ fun JobDetailScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             job.photoIds.forEach { fileId ->
+                                val url = AppwriteFileUtils.fileViewUrl(fileId)
                                 AsyncImage(
-                                    model = AppwriteFileUtils.fileViewUrl(fileId),
+                                    model = url,
                                     contentDescription = "Job photo",
                                     modifier = Modifier
                                         .size(100.dp)
-                                        .clip(MaterialTheme.shapes.small),
+                                        .clip(MaterialTheme.shapes.small)
+                                        .clickable { fullscreenImageUrl = url },
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -345,6 +349,10 @@ fun JobDetailScreen(
                 }
             }
         }
+    }
+
+    fullscreenImageUrl?.let { url ->
+        FullscreenImageDialog(imageUrl = url, onDismiss = { fullscreenImageUrl = null })
     }
 
     if (showDeleteDialog) {
