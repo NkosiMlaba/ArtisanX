@@ -75,6 +75,10 @@ class ProfileViewModel @Inject constructor(
         loadProfile()
     }
 
+    fun refresh() {
+        loadProfile()
+    }
+
     private fun loadProfile() {
         _isLoading.value = true
         viewModelScope.launch {

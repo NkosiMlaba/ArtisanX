@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.artisanx.presentation.common.EmptyState
+import com.example.artisanx.presentation.common.OnLifecycleResume
 import com.example.artisanx.presentation.common.RatingStars
 import com.example.artisanx.presentation.common.iconForCategory
 import com.example.artisanx.presentation.navigation.Screen
@@ -31,6 +32,7 @@ fun ReviewsListScreen(
     navController: NavController,
     viewModel: ReviewsListViewModel = hiltViewModel()
 ) {
+    OnLifecycleResume { viewModel.load() }
     val isGiven = viewModel.mode == Screen.ReviewsList.MODE_GIVEN
     val title = if (isGiven) "Reviews I've Given" else "Reviews Received"
     val reviews = viewModel.reviews.value

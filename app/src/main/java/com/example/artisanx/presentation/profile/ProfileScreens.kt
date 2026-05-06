@@ -27,6 +27,7 @@ import androidx.navigation.NavController
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.RateReview
 import com.example.artisanx.presentation.common.LocationPickerScreen
+import com.example.artisanx.presentation.common.OnLifecycleResume
 import com.example.artisanx.presentation.common.RatingStars
 import com.example.artisanx.presentation.navigation.Screen
 import com.google.android.gms.maps.model.LatLng
@@ -38,6 +39,7 @@ fun CustomerProfileScreen(
     navController: NavController,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    OnLifecycleResume { viewModel.refresh() }
     val user = viewModel.user.value
     val profileDoc = viewModel.profileDoc.value
     val isLoading = viewModel.isLoading.value
@@ -139,6 +141,7 @@ fun ArtisanProfileScreen(
     navController: NavController,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    OnLifecycleResume { viewModel.refresh() }
     val user = viewModel.user.value
     val profileDoc = viewModel.profileDoc.value
     val isLoading = viewModel.isLoading.value

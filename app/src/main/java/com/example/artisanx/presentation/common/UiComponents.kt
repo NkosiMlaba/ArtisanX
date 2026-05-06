@@ -253,6 +253,25 @@ fun iconForCategory(category: String): ImageVector = when (category.trim().lower
 }
 
 // ---------------------------------------------------------------------------
+// Lifecycle-aware refresh trigger — fires the callback every time the
+// hosting screen is resumed (initial load + every navigate-back / app-resume)
+// ---------------------------------------------------------------------------
+
+@Composable
+fun OnLifecycleResume(onResume: () -> Unit) {
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                onResume()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Offline banner
 // ---------------------------------------------------------------------------
 
