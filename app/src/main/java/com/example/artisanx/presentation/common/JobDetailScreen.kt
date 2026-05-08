@@ -8,6 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -89,6 +90,11 @@ fun JobDetailScreen(
                 },
                 actions = {
                     if (isOwnJob && job?.status == "open") {
+                        IconButton(onClick = {
+                            navController.navigate(Screen.EditJob.createRoute(job.id))
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Job")
+                        }
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete Job", tint = MaterialTheme.colorScheme.error)
                         }

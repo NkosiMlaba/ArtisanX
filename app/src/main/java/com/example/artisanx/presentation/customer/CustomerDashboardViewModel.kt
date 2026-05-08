@@ -18,14 +18,19 @@ class CustomerDashboardViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
+    private val _allJobs = mutableStateOf<List<Job>>(emptyList())
+
     private val _jobs = mutableStateOf<List<Job>>(emptyList())
     val jobs: State<List<Job>> = _jobs
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
-    
+
     private val _error = mutableStateOf<String?>(null)
     val error: State<String?> = _error
+
+    private val _searchQuery = mutableStateOf("")
+    val searchQuery: State<String> = _searchQuery
 
     init {
         loadMyJobs()
@@ -38,7 +43,8 @@ class CustomerDashboardViewModel @Inject constructor(
             if (userRes is Resource.Success && userRes.data != null) {
                 when (val jobsRes = jobRepository.getJobsByCustomer(userRes.data.id)) {
                     is Resource.Success -> {
-                        _jobs.value = jobsRes.data ?: emptyList()
+                        _allJobs.value = jobsRes.data ?: emptyList()
+                        applyFilter()
                         _error.value = null
                     }
                     is Resource.Error -> {
@@ -50,6 +56,22 @@ class CustomerDashboardViewModel @Inject constructor(
                 _error.value = "User not logged in"
             }
             _isLoading.value = false
+        }
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+        applyFilter()
+    }
+
+    private fun applyFilter() {
+        val q = _searchQuery.value.trim().lowercase()
+        _jobs.value = if (q.isBlank()) _allJobs.value
+        else _allJobs.value.filter { job ->
+            job.title.lowercase().contains(q) ||
+                job.description.lowercase().contains(q) ||
+                job.category.lowercase().contains(q) ||
+                job.address.lowercase().contains(q)
         }
     }
 }

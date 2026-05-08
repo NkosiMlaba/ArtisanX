@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.artisanx.domain.repository.AiRepository
@@ -26,16 +27,58 @@ class PostJobViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val aiRepository: AiRepository,
     private val storage: Storage,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private var cachedUserId = ""
+
+    private val editJobId: String = savedStateHandle.get<String>("jobId") ?: ""
+
+    private val _isEditMode = mutableStateOf(editJobId.isNotBlank())
+    val isEditMode: State<Boolean> = _isEditMode
+
+    private val _isPrefilling = mutableStateOf(editJobId.isNotBlank())
+    val isPrefilling: State<Boolean> = _isPrefilling
+
+    val latitude: State<Double> get() = _latitude
+    val longitude: State<Double> get() = _longitude
 
     init {
         viewModelScope.launch {
             val res = authRepository.getCurrentUser()
             if (res is Resource.Success) cachedUserId = res.data?.id ?: ""
         }
+        if (editJobId.isNotBlank()) {
+            viewModelScope.launch { prefillFromJob(editJobId) }
+        }
+    }
+
+    private suspend fun prefillFromJob(jobId: String) {
+        when (val res = jobRepository.getJobById(jobId)) {
+            is Resource.Success -> {
+                val job = res.data
+                if (job != null) {
+                    _title.value = job.title
+                    _description.value = job.description
+                    _category.value = job.category
+                    _address.value = job.address
+                    _latitude.value = job.latitude
+                    _longitude.value = job.longitude
+                    _budget.value = if (job.budget > 0) job.budget.toString() else ""
+                    job.photoIds.forEach { fileId ->
+                        if (!_uploadedPhotoIds.contains(fileId)) {
+                            _uploadedPhotoIds.add(fileId)
+                            // Use the remote URL as a stand-in Uri so the existing photo grid renders.
+                            _photoUris.add(Uri.parse(AppwriteFileUtils.fileViewUrl(fileId)))
+                        }
+                    }
+                }
+            }
+            is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(res.message ?: "Could not load job"))
+            else -> Unit
+        }
+        _isPrefilling.value = false
     }
 
     private val _title = mutableStateOf("")
@@ -161,7 +204,22 @@ class PostJobViewModel @Inject constructor(
                 _uiEvent.emit(UiEvent.ShowSnackbar("Could not get user session."))
                 return@launch
             }
-            val result = jobRepository.createJob(
+            val result: Resource<*> = if (_isEditMode.value) {
+                jobRepository.updateJob(
+                    jobId = editJobId,
+                    updates = mapOf(
+                        "title" to _title.value,
+                        "description" to _description.value,
+                        "category" to _category.value,
+                        "address" to _address.value.ifBlank { "Not specified" },
+                        "budget" to budgetVal,
+                        "latitude" to _latitude.value,
+                        "longitude" to _longitude.value,
+                        "photoIds" to _uploadedPhotoIds.toList()
+                    )
+                )
+            } else {
+                jobRepository.createJob(
                     customerId = cachedUserId,
                     title = _title.value,
                     description = _description.value,
@@ -172,16 +230,20 @@ class PostJobViewModel @Inject constructor(
                     longitude = _longitude.value,
                     photoIds = _uploadedPhotoIds.toList()
                 )
+            }
 
-                _isLoading.value = false
-                when (result) {
-                    is Resource.Success -> {
-                        _uiEvent.emit(UiEvent.ShowSnackbar("Job posted successfully!"))
-                        _uiEvent.emit(UiEvent.NavigateBack)
-                    }
-                    is Resource.Error -> _uiEvent.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to post job"))
-                    else -> Unit
+            _isLoading.value = false
+            when (result) {
+                is Resource.Success -> {
+                    val msg = if (_isEditMode.value) "Job updated" else "Job posted successfully!"
+                    _uiEvent.emit(UiEvent.ShowSnackbar(msg))
+                    _uiEvent.emit(UiEvent.NavigateBack)
                 }
+                is Resource.Error -> _uiEvent.emit(
+                    UiEvent.ShowSnackbar(result.message ?: if (_isEditMode.value) "Failed to update job" else "Failed to post job")
+                )
+                else -> Unit
+            }
         }
     }
 

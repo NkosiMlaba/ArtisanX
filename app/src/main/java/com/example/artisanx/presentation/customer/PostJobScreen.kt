@@ -99,7 +99,7 @@ fun PostJobScreen(
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text("Post a Job") },
+                title = { Text(if (viewModel.isEditMode.value) "Edit Job" else "Post a Job") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     scrolledContainerColor = Color.Transparent
@@ -279,7 +279,7 @@ fun PostJobScreen(
                 if (isLoading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Post Job")
+                    Text(if (viewModel.isEditMode.value) "Save Changes" else "Post Job")
                 }
             }
         }

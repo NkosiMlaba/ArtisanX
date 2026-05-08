@@ -10,7 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WorkOutline
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -27,6 +29,7 @@ import androidx.navigation.NavController
 import com.example.artisanx.domain.model.Job
 import com.example.artisanx.presentation.common.EmptyState
 import com.example.artisanx.presentation.common.JobCardSkeleton
+import com.example.artisanx.presentation.common.OnLifecycleResume
 import com.example.artisanx.presentation.common.iconForCategory
 import com.example.artisanx.presentation.navigation.Screen
 
@@ -36,9 +39,11 @@ fun CustomerDashboardScreen(
     navController: NavController,
     viewModel: CustomerDashboardViewModel = hiltViewModel()
 ) {
+    OnLifecycleResume { viewModel.loadMyJobs() }
     val jobs = viewModel.jobs.value
     val isLoading = viewModel.isLoading.value
     val error = viewModel.error.value
+    val searchQuery = viewModel.searchQuery.value
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -57,11 +62,30 @@ fun CustomerDashboardScreen(
             }
         }
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = isLoading,
-            onRefresh = { viewModel.loadMyJobs() },
-            modifier = Modifier.fillMaxSize().padding(padding)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.setSearchQuery(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Search your jobs by title, category, location…") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = MaterialTheme.shapes.extraLarge
+            )
+            PullToRefreshBox(
+                isRefreshing = isLoading,
+                onRefresh = { viewModel.loadMyJobs() },
+                modifier = Modifier.fillMaxSize()
+            ) {
             when {
                 isLoading && jobs.isEmpty() -> {
                     LazyColumn(
@@ -80,12 +104,21 @@ fun CustomerDashboardScreen(
                     )
                 }
                 jobs.isEmpty() -> {
-                    EmptyState(
-                        icon = Icons.Default.WorkOutline,
-                        title = "No jobs posted yet",
-                        subtitle = "Tap + to post your first job and get bids from skilled artisans.",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    if (searchQuery.isNotBlank()) {
+                        EmptyState(
+                            icon = Icons.Default.Search,
+                            title = "No jobs match \"$searchQuery\"",
+                            subtitle = "Try a different keyword or clear the search.",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    } else {
+                        EmptyState(
+                            icon = Icons.Default.WorkOutline,
+                            title = "No jobs posted yet",
+                            subtitle = "Tap + to post your first job and get bids from skilled artisans.",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
                 else -> {
                     LazyColumn(
@@ -100,6 +133,7 @@ fun CustomerDashboardScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

@@ -158,6 +158,9 @@ fun AppNavGraph(
             composable(route = Screen.PostJob.route) {
                 PostJobScreen(navController = navController, snackbarHostState = snackbarHostState)
             }
+            composable(route = Screen.EditJob.route) {
+                PostJobScreen(navController = navController, snackbarHostState = snackbarHostState)
+            }
             composable(route = Screen.CustomerProfile.route) {
                 CustomerProfileScreen(navController)
             }
